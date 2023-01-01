@@ -1,46 +1,34 @@
-import numpy as np
 from typing import Optional, Tuple, Union, List, Dict
+import inspect, importlib, functools
+import numpy as np
 
 
-class Variable:
+class Tensor:
   def __init__(self, data):
     self.data = data
-    self._grad = None
-    self._ctx: Optional[Function] = None
-
-  def __add__(self, x):
-    r = Add()
-    return r.apply(self, x)
-
-
-class Buffer:
-  def __init__(self, buffer: Union[np.ndarray, List], shape: Tuple, strides: Optional[Tuple]=None):
-    self._buffer = buffer if isinstance(buffer, np.ndarray) else np.ndarray(buffer)
-    self.shape = shape
-    self.strides = strides
+    self._grad: Optional[Tensor] = None
+    self.requires_grad: Optional[Bool] = None
 
 
 class Function:
-  def __init__(self):
-    self.saved_tensor: List[Variable] = []
-    self._needs_input_grad: List[Variable] = []
+  def __init__(self, *variables: Tensor):
+    self.saved_tensor: List[Tensor] = []
+    self.needs_input_grad: List[Tensor] = variables
 
   def saved_for_backward(self, *x):
     self.saved_tensor.extend(x)
 
-  def apply(self, *x):
-    val = self.forward(*[i.data for i in x])
-    ret = Variable(val)
-    ret._ctx = self
+  @classmethod
+  def apply(cls, *x):
+    # Create an instance of the Function
+    ctx = cls(*x) 
+    # Every ops create a new Tensor
+    ret = Tensor(data=ctx.forward(*[v.data for v in x]))
+    ret._ctx = ctx
     return ret
 
-
-class Add(Function):
-  def forward(self, a, b):
-    self.saved_for_backward(a, b)
-    return a + b
-
-  def backward(self, grad_output):
-    a, b = self.saved_tensor
-    return a, b
-
+# Meta programming
+# For some reason this get pass the circular import problem.
+for name, cls in inspect.getmembers(importlib.import_module('smalltensor.ops'), inspect.isclass):
+  if name != "Function": setattr(Tensor, f"__{name.lower()}__", functools.partialmethod(cls.apply))
+# setattr(Tensor, f"__{name}__", 
