@@ -19,5 +19,20 @@ def test_add():
   c = (a + b)
   assert c.data == 3
   assert isinstance(c._ctx, Add)
-  assert len(c._ctx.needs_input_grad) == 2
+  assert len(c._ctx.parent) == 2
+
+def test_const():
+  a = Tensor(1)
+  assert (a+1).data == 2
+  assert (1+a).data == 2
+
+def test_neg():
+  a = Tensor(1)
+  assert (-a).data == -1
+
+def test_sub():
+  a = Tensor(1)
+  b = Tensor(2)
+  assert (a-b).data == -1
+  assert (b-a).data == 1
 

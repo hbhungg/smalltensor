@@ -8,3 +8,10 @@ class Add(Function):
   def backward(self, grad_output):
     a, b = self.saved_tensor
     return a*grad_output, b
+
+
+class Neg(Function):
+  def forward(self, a):
+    return -a
+  def backward(self, grad_output):
+    return -grad_output
