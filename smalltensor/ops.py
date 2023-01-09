@@ -1,5 +1,15 @@
 from smalltensor.tensor import Function
 
+#  ********** Unary ops **********
+
+class Neg(Function):
+  def forward(self, a):
+    return -a
+  def backward(self, grad_output):
+    return -grad_output
+
+# *********** Binary ops **********
+
 class Add(Function):
   def forward(self, a, b):
     self.saved_for_backward(a, b)
@@ -10,8 +20,3 @@ class Add(Function):
     return a*grad_output, b
 
 
-class Neg(Function):
-  def forward(self, a):
-    return -a
-  def backward(self, grad_output):
-    return -grad_output

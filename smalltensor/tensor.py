@@ -34,12 +34,18 @@ class Tensor:
     x, y = [Tensor(t) if not isinstance(t, Tensor) else t for t in [x, y]]
     return fxn(x, y)
 
+  # Unary ops
+  def __neg__(self): return Tensor._neg(self)
+
+  # Binary ops
   def __add__(self, x): return Tensor.ensure_tensor(Tensor._add, self, x)
   def __radd__(self, x): return Tensor.ensure_tensor(Tensor._add, x, self)
-  def __neg__(self): return Tensor._neg(self)
   def __sub__(self, x): return Tensor.ensure_tensor(Tensor._add, self, -x)
   def __rsub__(self, x): return Tensor.ensure_tensor(Tensor._add, -x, self)
 
+  # TODO:
+  # Reduce ops
+  # Movement ops
 
 class Function:
   def __init__(self, *tensors: Tensor):
