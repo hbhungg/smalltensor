@@ -5,34 +5,37 @@ import numpy as np
 
 
 class Tensor:
-  def __init__(self, data):
+  def __init__(self, data, requires_grad=True):
     self.data = data
     self._grad: Optional[Tensor] = None
-    self.requires_grad: Optional[Bool] = None
+    self.requires_grad: Optional[Bool] = requires_grad
 
     # Context for autograph construction
     self._ctx: Optional[Function] = None
 
-  def backward(self, x):
-    pass
-
   def __repr__(self):
     return f"Tensor({self.data})"
 
-  def deepwalk(self):
-    def _deepwalk(x: Tensor):
-      print(x)
-      if x._ctx is not None:
-        for t in x._ctx.parent:
-          _deepwalk(t)
-    _deepwalk(self)
-  
-  # This should be broadcasted
-  # For now, this will turn all python number into Tensor
   @staticmethod
   def ensure_tensor(fxn, x, y):
-    x, y = [Tensor(t) if not isinstance(t, Tensor) else t for t in [x, y]]
+    """
+    Turn all Python number into Tensor
+    """
+    x, y = [Tensor(t, requires_grad=False) if not isinstance(t, Tensor) else t for t in [x, y]]
     return fxn(x, y)
+
+  def deepwalk(self):
+    # Toposort
+    def _deepwalk(node, visited, nodes):
+      visited.add(node)
+      if node._ctx is not None:
+        [_deepwalk(i, visited, nodes) for i in node._ctx.parents if i not in visited]
+      nodes.append(node)
+      return nodes
+    return _deepwalk(self, set(), [])
+  
+  def backward(self, x=None):
+    pass
 
   # Unary ops
   def __neg__(self): return Tensor._neg(self)
@@ -49,11 +52,12 @@ class Tensor:
   # Reduce ops
   # Movement ops
 
+
 class Function:
   def __init__(self, *tensors: Tensor):
-    self.parent = tensors
+    self.parents = tensors
     self.saved_tensor: List[Tensor] = []
-    # self.needs_input_grad: List[Tensor] = [t.requires_grad for t in self.parent]
+    self.needs_input_grad: List[Tensor] = [t.requires_grad for t in self.parents]
 
   def saved_for_backward(self, *x):
     self.saved_tensor.extend(x)

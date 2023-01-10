@@ -12,11 +12,10 @@ class Neg(Function):
 
 class Add(Function):
   def forward(self, a, b):
-    return a + b
+    return a+b
 
   def backward(self, grad_output):
     return grad_output, grad_output
-
 
 class Mul(Function):
   def forward(self, a, b):
