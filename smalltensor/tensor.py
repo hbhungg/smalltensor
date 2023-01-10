@@ -42,6 +42,8 @@ class Tensor:
   def __radd__(self, x): return Tensor.ensure_tensor(Tensor._add, x, self)
   def __sub__(self, x): return Tensor.ensure_tensor(Tensor._add, self, -x)
   def __rsub__(self, x): return Tensor.ensure_tensor(Tensor._add, -x, self)
+  def __mul__(self, x): return Tensor.ensure_tensor(Tensor._mul, self, x)
+  def __rmul__(self, x): return Tensor.ensure_tensor(Tensor._mul, x, self)
 
   # TODO:
   # Reduce ops

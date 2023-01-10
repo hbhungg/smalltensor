@@ -35,4 +35,14 @@ def test_sub():
   b = Tensor(2)
   assert (a-b).data == -1
   assert (b-a).data == 1
+  assert (a-1).data == 0
+  assert (1-a).data == 0
+
+def test_mul():
+  a = Tensor(2)
+  b = Tensor(3)
+  assert (a*b).data == 6
+  assert (b*a).data == 6
+  assert (a*1).data == 2
+  assert (1*b).data == 3
 
