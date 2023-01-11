@@ -4,6 +4,17 @@ from smalltensor.ops import Add
 from smalltensor.buffer import Buffer
 import numpy as np
 
+class StdoutColor:
+  HEADER = '\033[95m'
+  OKBLUE = '\033[94m'
+  OKCYAN = '\033[96m'
+  OKGREEN = '\033[92m'
+  WARNING = '\033[93m'
+  FAIL = '\033[91m'
+  ENDC = '\033[0m'
+  BOLD = '\033[1m'
+  UNDERLINE = '\033[4m'
+
 def test1():
   a = [0]
   b = Buffer(a, (1,))
@@ -19,7 +30,7 @@ def test_add():
   c = (a + b)
   assert c.data == 3
   assert isinstance(c._ctx, Add)
-  assert len(c._ctx.parent) == 2
+  assert len(c._ctx.parents) == 2
 
 def test_const():
   a = Tensor(1)
@@ -46,3 +57,17 @@ def test_mul():
   assert (a*1).data == 2
   assert (1*b).data == 3
 
+def test_inv():
+  a = Tensor(10)
+  b = Tensor(2)
+  assert (a/b).data == 5
+  assert (b/a).data == 0.2
+  assert (a/2).data == 5
+  assert (2/a).data == 0.2
+
+def test_backward():
+  c = 2/Tensor(10)
+  try:
+    c.backward()
+  except Exception as e:
+    assert False, f"backward() broke with {StdoutColor.FAIL}{e.__class__.__name__}: {e}{StdoutColor.ENDC}"

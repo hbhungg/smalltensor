@@ -14,7 +14,7 @@ class Tensor:
     self._ctx: Optional[Function] = None
 
   def __repr__(self):
-    return f"Tensor({self.data})"
+    return f"Tensor(({self.data}), requires_grad={self.requires_grad}, grad_fn={self._ctx})"
 
   @staticmethod
   def ensure_tensor(fxn, x, y):
@@ -24,7 +24,7 @@ class Tensor:
     x, y = [Tensor(t, requires_grad=False) if not isinstance(t, Tensor) else t for t in [x, y]]
     return fxn(x, y)
 
-  def deepwalk(self):
+  def toposort(self):
     """
     Toposort for backward pass
     """
@@ -38,12 +38,14 @@ class Tensor:
   
   def backward(self):
     self.grad = Tensor(1, requires_grad=False)
-    for t0 in reversed(self.deepwalk()):
+    for t0 in reversed(self.toposort()):
       grads = t0._ctx.backward(t0.grad)
+      grads = [grads] if not isinstance(grads, Tuple) else grads
       for t, g in zip(t0._ctx.parents, grads):
+        #print(t)
         if t.requires_grad:
           t.grad = g if t.grad is None else (t.grad + g)
-      del t0._ctx
+      # del t0._ctx
     return self.grad
 
   # Unary ops
@@ -51,6 +53,7 @@ class Tensor:
   def relu(self): return Tensor._relu(self)
   def log(self): return Tensor._log(self)
   def exp(self): return Tensor._exp(self)
+  def inv(self): return Tensor._inv(self)
 
   # Binary ops
   def __add__(self, x): return Tensor.ensure_tensor(Tensor._add, self, x)
@@ -59,8 +62,8 @@ class Tensor:
   def __rsub__(self, x): return Tensor.ensure_tensor(Tensor._add, -x, self)
   def __mul__(self, x): return Tensor.ensure_tensor(Tensor._mul, self, x)
   def __rmul__(self, x): return Tensor.ensure_tensor(Tensor._mul, x, self)
-  def __truediv__(self, x): return Tensor.ensure_tensor(Tensor._mul, self, Tensor._inv(x))
-  def __rtruediv__(self, x): return Tensor.ensure_tensor(Tensor._mul, x, Tensor._inv(self))
+  def __truediv__(self, x): return self * (x.inv() if isinstance(x, Tensor) else (1/x))
+  def __rtruediv__(self, x): return x * self.inv()
   def __pow__(self, x): return Tensor.ensure_tensor(Tensor._pow, self, x)
 
   # TODO:
@@ -77,6 +80,7 @@ class Function:
     self.saved_tensor: List[Tensor] = []
     self.needs_input_grad: List[Bool] = [t.requires_grad for t in self.parents]
     self.requires_grad: Bool = any(self.needs_input_grad)
+    #print(self.parents, self.needs_input_grad)
 
   def saved_for_backward(self, *x):
     self.saved_tensor.extend(x)
@@ -89,6 +93,9 @@ class Function:
     ret = Tensor(data=ctx.forward(*[v.data for v in x]), requires_grad=ctx.requires_grad)
     ret._ctx = ctx
     return ret
+  
+  def __repr__(self):
+    return f"<{self.__class__.__name__}Backward>"
 
 
 # Meta programming

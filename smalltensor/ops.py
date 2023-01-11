@@ -15,7 +15,8 @@ class Inv(Function):
     return 1/a
   
   def backward(self, grad_output):
-    return -1/a*a
+    a = self.saved_tensor[0]
+    return grad_output*(-1/a*a)
 
 class ReLU(Function):
   def forward(self, a):
