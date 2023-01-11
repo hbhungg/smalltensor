@@ -7,7 +7,7 @@ import numpy as np
 class Tensor:
   def __init__(self, data, requires_grad=True):
     self.data = data
-    self._grad: Optional[Tensor] = None
+    self.grad: Optional[Tensor] = None
     self.requires_grad: Bool = requires_grad
 
     # Context for autograph construction
@@ -37,13 +37,14 @@ class Tensor:
     return _deepwalk(self, set(), [])
   
   def backward(self):
-    self._grad = Tensor(1, requires_grad=False)
+    self.grad = Tensor(1, requires_grad=False)
     for t0 in reversed(self.deepwalk()):
-      grads = t0._ctx.backward(t0._grad)
+      grads = t0._ctx.backward(t0.grad)
       for t, g in zip(t0._ctx.parents, grads):
         if t.requires_grad:
-          t._grad = g if t._grad is None else (t._grad + g)
-    return self._grad
+          t.grad = g if t.grad is None else (t.grad + g)
+      del t0._ctx
+    return self.grad
 
 
   # Unary ops
