@@ -8,7 +8,7 @@ class Tensor:
   def __init__(self, data, requires_grad=True):
     self.data = data
     self._grad: Optional[Tensor] = None
-    self.requires_grad: Optional[Bool] = requires_grad
+    self.requires_grad: Bool = requires_grad
 
     # Context for autograph construction
     self._ctx: Optional[Function] = None
@@ -25,18 +25,25 @@ class Tensor:
     return fxn(x, y)
 
   def deepwalk(self):
-    # Toposort
+    """
+    Toposort for backward pass
+    """
     def _deepwalk(node, visited, nodes):
       visited.add(node)
       if node._ctx is not None:
         [_deepwalk(i, visited, nodes) for i in node._ctx.parents if i not in visited]
-      nodes.append(node)
+        nodes.append(node)
       return nodes
     return _deepwalk(self, set(), [])
   
   def backward(self):
     self._grad = Tensor(1, requires_grad=False)
-    return self._ctx.backward(self._grad)
+    for t0 in reversed(self.deepwalk()):
+      grads = t0._ctx.backward(t0._grad)
+      for t, g in zip(t0._ctx.parents, grads):
+        if t.requires_grad:
+          t._grad = g if t._grad is None else (t._grad + g)
+    return self._grad
 
 
   # Unary ops
@@ -59,7 +66,8 @@ class Function:
   def __init__(self, *tensors: Tensor):
     self.parents = tensors
     self.saved_tensor: List[Tensor] = []
-    self.needs_input_grad: List[Tensor] = [t.requires_grad for t in self.parents]
+    self.needs_input_grad: List[Bool] = [t.requires_grad for t in self.parents]
+    self.requires_grad: Bool = any(self.needs_input_grad)
 
   def saved_for_backward(self, *x):
     self.saved_tensor.extend(x)
@@ -69,7 +77,7 @@ class Function:
     # Create an instance of the Function
     ctx = cls(*x) 
     # Every ops create a new Tensor
-    ret = Tensor(data=ctx.forward(*[v.data for v in x]))
+    ret = Tensor(data=ctx.forward(*[v.data for v in x]), requires_grad=ctx.requires_grad)
     ret._ctx = ctx
     return ret
 
