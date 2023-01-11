@@ -42,10 +42,9 @@ class Tensor:
       grads = t0._ctx.backward(t0.grad)
       grads = [grads] if not isinstance(grads, Tuple) else grads
       for t, g in zip(t0._ctx.parents, grads):
-        #print(t)
         if t.requires_grad:
           t.grad = g if t.grad is None else (t.grad + g)
-      # del t0._ctx
+      del t0._ctx
     return self.grad
 
   # Unary ops
@@ -80,7 +79,6 @@ class Function:
     self.saved_tensor: List[Tensor] = []
     self.needs_input_grad: List[Bool] = [t.requires_grad for t in self.parents]
     self.requires_grad: Bool = any(self.needs_input_grad)
-    #print(self.parents, self.needs_input_grad)
 
   def saved_for_backward(self, *x):
     self.saved_tensor.extend(x)
