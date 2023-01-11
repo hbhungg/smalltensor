@@ -46,9 +46,11 @@ class Tensor:
       del t0._ctx
     return self.grad
 
-
   # Unary ops
   def __neg__(self): return Tensor._neg(self)
+  def relu(self): return Tensor._relu(self)
+  def log(self): return Tensor._log(self)
+  def exp(self): return Tensor._exp(self)
 
   # Binary ops
   def __add__(self, x): return Tensor.ensure_tensor(Tensor._add, self, x)
@@ -57,10 +59,16 @@ class Tensor:
   def __rsub__(self, x): return Tensor.ensure_tensor(Tensor._add, -x, self)
   def __mul__(self, x): return Tensor.ensure_tensor(Tensor._mul, self, x)
   def __rmul__(self, x): return Tensor.ensure_tensor(Tensor._mul, x, self)
+  def __truediv__(self, x): return Tensor.ensure_tensor(Tensor._mul, self, Tensor._inv(x))
+  def __rtruediv__(self, x): return Tensor.ensure_tensor(Tensor._mul, x, Tensor._inv(self))
+  def __pow__(self, x): return Tensor.ensure_tensor(Tensor._pow, self, x)
 
   # TODO:
   # Reduce ops
+  def sum(self, x): Raise NotImplementedError("will implement")
+  def max(self, x): Raise NotImplementedError("will implement")
   # Movement ops
+  # Processing ops
 
 
 class Function:
