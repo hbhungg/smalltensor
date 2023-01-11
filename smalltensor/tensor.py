@@ -34,8 +34,10 @@ class Tensor:
       return nodes
     return _deepwalk(self, set(), [])
   
-  def backward(self, x=None):
-    pass
+  def backward(self):
+    self._grad = Tensor(1, requires_grad=False)
+    return self._ctx.backward(self._grad)
+
 
   # Unary ops
   def __neg__(self): return Tensor._neg(self)

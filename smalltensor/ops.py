@@ -24,4 +24,4 @@ class Mul(Function):
 
   def backward(self, grad_output):
     a, b = self.saved_tensor
-    return a*grad_output, b*grad_output
+    return b*grad_output, a*grad_output
