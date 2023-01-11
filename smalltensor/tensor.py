@@ -65,8 +65,8 @@ class Tensor:
 
   # TODO:
   # Reduce ops
-  def sum(self, x): Raise NotImplementedError("will implement")
-  def max(self, x): Raise NotImplementedError("will implement")
+  def sum(self, x): raise NotImplementedError("will implement")
+  def max(self, x): raise NotImplementedError("will implement")
   # Movement ops
   # Processing ops
 
