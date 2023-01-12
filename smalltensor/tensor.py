@@ -1,3 +1,4 @@
+import os
 from typing import Optional, Tuple, Union, List, Dict
 import inspect, importlib, functools
 
@@ -14,7 +15,10 @@ class Tensor:
     self._ctx: Optional[Function] = None
 
   def __repr__(self):
-    return f"Tensor(({self.data}), requires_grad={self.requires_grad}, grad_fn={self._ctx})"
+    if int(os.getenv('VERBOSE')) > 0:
+      return f"Tensor({self.data}, requires_grad={self.requires_grad}, grad_fn={self._ctx})"
+    else:
+      return f"Tensor({self.data})"
 
   @staticmethod
   def ensure_tensor(fxn, x, y):
@@ -48,6 +52,7 @@ class Tensor:
     return self.grad
 
   # Unary ops
+  # Should neg be a standalone function or using sub?
   def __neg__(self): return Tensor._neg(self)
   def relu(self): return Tensor._relu(self)
   def log(self): return Tensor._log(self)
@@ -57,13 +62,14 @@ class Tensor:
   # Binary ops
   def __add__(self, x): return Tensor.ensure_tensor(Tensor._add, self, x)
   def __radd__(self, x): return Tensor.ensure_tensor(Tensor._add, x, self)
-  def __sub__(self, x): return Tensor.ensure_tensor(Tensor._add, self, -x)
-  def __rsub__(self, x): return Tensor.ensure_tensor(Tensor._add, -x, self)
+  def __sub__(self, x): return Tensor.ensure_tensor(Tensor._sub, self, x)
+  def __rsub__(self, x): return Tensor.ensure_tensor(Tensor._sub, x, self)
   def __mul__(self, x): return Tensor.ensure_tensor(Tensor._mul, self, x)
   def __rmul__(self, x): return Tensor.ensure_tensor(Tensor._mul, x, self)
   def __truediv__(self, x): return self * (x.inv() if isinstance(x, Tensor) else (1/x))
   def __rtruediv__(self, x): return x * self.inv()
   def __pow__(self, x): return Tensor.ensure_tensor(Tensor._pow, self, x)
+  def eq(self, x): return Tensor._eq(self, x)
 
   # TODO:
   # Reduce ops

@@ -1,3 +1,4 @@
+import math
 from smalltensor.tensor import Function
 
 # *********** Unary ops **********
@@ -27,7 +28,7 @@ class ReLU(Function):
 
 class Log(Function):
   def forward(self, a):
-    raise NotImplementedError("will implement")
+    return math.log(a)
 
   def backward(self, grad_output):
     raise NotImplementedError("will implement")
@@ -64,6 +65,13 @@ class Add(Function):
   def backward(self, grad_output):
     return grad_output, grad_output
 
+class Sub(Function):
+  def forward(self, a, b):
+    return a-b
+
+  def backward(self, grad_output):
+    return grad_output, grad_output
+
 class Mul(Function):
   def forward(self, a, b):
     self.saved_for_backward(a, b)
@@ -75,10 +83,19 @@ class Mul(Function):
 
 class Pow(Function):
   def forward(self, a, b):
-    raise NotImplementedError("will implement")
+    self.saved_for_backward(a, b)
+    return a**b
 
   def backward(self, grad_output):
-    raise NotImplementedError("will implement")
+    a, b = self.saved_tensor
+    return b*(a**(b-1)), 
+
+class Eq(Function):
+  def forward(self, a, b):
+    return a == b
+
+  def backward(self, grad_output):
+    return 0.0, 0.0
 
 # TODO: Do we need this 2 ?
 # *********** Movement ops **********
