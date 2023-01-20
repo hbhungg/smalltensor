@@ -17,7 +17,7 @@ class Inv(Function):
   
   def backward(self, grad_output):
     a = self.saved_tensor[0]
-    return grad_output*(-1/a*a)
+    return grad_output*(-1/(a*a))
 
 class ReLU(Function):
   def forward(self, a):
@@ -34,7 +34,7 @@ class Log(Function):
     return math.log(a)
 
   def backward(self, grad_output):
-    a = self.saved_tensor
+    a = self.saved_tensor[0]
     return grad_output * 1/a
 
 class Exp(Function):
@@ -43,7 +43,7 @@ class Exp(Function):
     return math.exp(a)
 
   def backward(self, grad_output):
-    a = self.saved_tensor
+    a = self.saved_tensor[0]
     return grad_output * math.exp(a)
 
 # *********** Reduce ops **********
@@ -76,7 +76,7 @@ class Sub(Function):
     return a-b
 
   def backward(self, grad_output):
-    return grad_output, grad_output
+    return grad_output, -grad_output
 
 class Mul(Function):
   def forward(self, a, b):
@@ -87,14 +87,14 @@ class Mul(Function):
     a, b = self.saved_tensor
     return b*grad_output, a*grad_output
 
-class Pow(Function):
-  def forward(self, a, b):
-    self.saved_for_backward(a, b)
-    return a**b
-
-  def backward(self, grad_output):
-    a, b = self.saved_tensor
-    return b*(a**(b-1)), 
+#class Pow(Function):
+#  def forward(self, a, b):
+#    self.saved_for_backward(a, b)
+#    return a**b
+#
+#  def backward(self, grad_output):
+#    a, b = self.saved_tensor
+#    return grad_output*b*(a**(b-1)), grad_output*(a**b)*math.log(abs(a))
 
 class Eq(Function):
   def forward(self, a, b):

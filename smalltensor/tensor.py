@@ -45,6 +45,7 @@ class Tensor:
     for t0 in reversed(self.toposort()):
       grads = t0._ctx.backward(t0.grad)
       grads = [grads] if not isinstance(grads, Tuple) else grads
+      grads = [Tensor(g, requires_grad=False) if not isinstance(g, Tensor) else g for g in grads]
       for t, g in zip(t0._ctx.parents, grads):
         if t.requires_grad:
           t.grad = g if t.grad is None else (t.grad + g)
@@ -68,7 +69,7 @@ class Tensor:
   def __rmul__(self, x): return Tensor.ensure_tensor(Tensor._mul, x, self)
   def __truediv__(self, x): return self * (x.inv() if isinstance(x, Tensor) else (1/x))
   def __rtruediv__(self, x): return x * self.inv()
-  def __pow__(self, x): return Tensor.ensure_tensor(Tensor._pow, self, x)
+  #def __pow__(self, x): return Tensor.ensure_tensor(Tensor._pow, self, x)
   def eq(self, x): return Tensor._eq(self, x)
 
   # TODO:
