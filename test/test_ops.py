@@ -47,16 +47,10 @@ set_printoptions(0)
 
 def test_add():
   util_test_ops(lambda x,y: x+y, Tensor.__add__)
-
 def test_sub():
   util_test_ops(lambda x,y: x-y, Tensor.__sub__)
-
 def test_mul():
   util_test_ops(lambda x,y: x*y, Tensor.__mul__)
-
-def test_inv_raise_zero():
-  with pytest.raises(ZeroDivisionError): c = Tensor(0).inv()
-
 def test_div():
   util_test_ops(lambda x,y: x/y, Tensor.__truediv__, 0.1, 10)
   util_test_ops(lambda x,y: x/y, Tensor.__truediv__, -10, -0.1)
@@ -64,19 +58,19 @@ def test_div():
 def test_div_raise_zero():
   with pytest.raises(ZeroDivisionError): c = Tensor(1)/0
   with pytest.raises(ZeroDivisionError): c = Tensor(1)/Tensor(0)
+def test_inv_raise_zero():
+  with pytest.raises(ZeroDivisionError): c = Tensor(0).inv()
 
 def test_inv():
   util_test_ops(lambda x: 1/x, Tensor.inv)
-
 #def test_pow():
 #  util_test_ops(lambda x,y: x**y, Tensor.__pow__, -10, -1)
-
 def test_log():
   util_test_ops(lambda x: math.log(x), Tensor.log, 0.1, 10)
-
 def test_relu():
   util_test_ops(lambda x: max(x, 0.0), Tensor.relu)
-
 def test_exp():
   util_test_ops(lambda x: math.exp(x), Tensor.exp)
+def test_neg():
+  util_test_ops(lambda x: -x, Tensor.__neg__)
 
