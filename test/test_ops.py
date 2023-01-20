@@ -41,9 +41,6 @@ def test_mul_const():
   util_test_ops(lambda x,y: 1*y, lambda x,y: 1*y)
   util_test_ops(lambda x,y: x*1, lambda x,y:x*1)
 
-def test_inv():
-  util_test_ops(lambda x: 1/x, Tensor.inv)
-
 def test_inv_raise_zero():
   with pytest.raises(ZeroDivisionError): c = Tensor(0).inv()
 
@@ -58,9 +55,18 @@ def test_div_raise_zero():
   with pytest.raises(ZeroDivisionError): c = Tensor(1)/0
   with pytest.raises(ZeroDivisionError): c = Tensor(1)/Tensor(0)
 
+def test_inv():
+  util_test_ops(lambda x: 1/x, Tensor.inv)
+
 def test_pow():
   util_test_ops(lambda x,y: x**y, Tensor.__pow__)
 
 def test_log():
   util_test_ops(lambda x: math.log(x), Tensor.log, 0.1, 10)
+
+def test_relu():
+  util_test_ops(lambda x: max(x, 0.0), Tensor.relu)
+
+def test_exp():
+  util_test_ops(lambda x: math.exp(x), Tensor.exp)
 

@@ -32,13 +32,13 @@ class Tensor:
     """
     Toposort for backward pass
     """
-    def _deepwalk(node, visited, nodes):
+    def _toposort(node, visited, nodes):
       visited.add(node)
       if node._ctx is not None:
-        [_deepwalk(i, visited, nodes) for i in node._ctx.parents if i not in visited]
+        [_toposort(i, visited, nodes) for i in node._ctx.parents if i not in visited]
         nodes.append(node)
       return nodes
-    return _deepwalk(self, set(), [])
+    return _toposort(self, set(), [])
   
   def backward(self):
     self.grad = Tensor(1, requires_grad=False)
@@ -54,10 +54,10 @@ class Tensor:
   # Unary ops
   # Should neg be a standalone function or using sub?
   def __neg__(self): return Tensor._neg(self)
+  def inv(self): return Tensor._inv(self)
   def relu(self): return Tensor._relu(self)
   def log(self): return Tensor._log(self)
   def exp(self): return Tensor._exp(self)
-  def inv(self): return Tensor._inv(self)
 
   # Binary ops
   def __add__(self, x): return Tensor.ensure_tensor(Tensor._add, self, x)

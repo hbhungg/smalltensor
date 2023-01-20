@@ -21,24 +21,30 @@ class Inv(Function):
 
 class ReLU(Function):
   def forward(self, a):
-    raise NotImplementedError("will implement")
+    self.saved_for_backward(a)
+    return max(a, 0.0)
 
   def backward(self, grad_output):
-    raise NotImplementedError("will implement")
+    a = self.saved_tensor[0]
+    return grad_output if a > 0 else 0.0
 
 class Log(Function):
   def forward(self, a):
+    self.saved_for_backward(a)
     return math.log(a)
 
   def backward(self, grad_output):
-    raise NotImplementedError("will implement")
+    a = self.saved_tensor
+    return grad_output * 1/a
 
 class Exp(Function):
   def forward(self, a):
-    raise NotImplementedError("will implement")
+    self.saved_for_backward(a)
+    return math.exp(a)
 
   def backward(self, grad_output):
-    raise NotImplementedError("will implement")
+    a = self.saved_tensor
+    return grad_output * math.exp(a)
 
 # *********** Reduce ops **********
 
