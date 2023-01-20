@@ -22,7 +22,6 @@ def util_test_ops(py_fxn, smt_fxn, s=-10.0, e=10.0, atol=1e-3, rtol=1e-3):
   nparams = len(signature(py_fxn).parameters)
   pyi = [random.uniform(s, e) for n in range(nparams)]
   sti = [Tensor(d, requires_grad=True) for d in pyi]
-  print(pyi)
   py_val = py_fxn(*pyi)
   st_val = smt_fxn(*sti)
   # Compare forward result from python ops and smalltensor ops
