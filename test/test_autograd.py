@@ -42,5 +42,5 @@ def test_diamond_backward():
   
   ll = zip(small_tensor_diamond_backward(), torch_diamond_backward())
   for x, y in ll:
-    assert x.data == approx(y.item())
+    assert x.item == approx(y.item())
 
