@@ -3,3 +3,5 @@ __pycache__/
 doc/
 htmlcov/
 .coverage
+nb/
+.DS_Store

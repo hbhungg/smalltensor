@@ -1,24 +1,34 @@
 import os
-from typing import Optional, Tuple, Union, List, Dict
+from typing import Optional, Tuple, Union, List
 import inspect, importlib, functools
 
 import numpy as np
 
+#from .buffer import Buffer
+
 
 class Tensor:
-  def __init__(self, data, requires_grad=True):
-    self.data = data
+  def __init__(self, item, requires_grad=False):
+    self.item = np.array(item) if not isinstance(item, np.ndarray) else item
     self.grad: Optional[Tensor] = None
     self.requires_grad: Bool = requires_grad
 
     # Context for autograph construction
     self._ctx: Optional[Function] = None
 
+  @property
+  def shape(self): return self.item.shape
+
+  @property
+  def dtype(self): return np.float32
+
   def __repr__(self):
-    if int(os.getenv('VERBOSE')) > 0:
-      return f"Tensor({self.data}, requires_grad={self.requires_grad}, grad_fn={self._ctx})"
+    if self.requires_grad and self._ctx is not None:
+      return f"Tensor({self.item}, requires_grad={self.requires_grad}, grad_fn={self._ctx})"
+    elif self.requires_grad and self._ctx is None:
+      return f"Tensor({self.item}, requires_grad={self.requires_grad})"
     else:
-      return f"Tensor({self.data})"
+      return f"Tensor({self.item})"
 
   @staticmethod
   def ensure_tensor(fxn, x, y):
@@ -27,6 +37,9 @@ class Tensor:
     """
     x, y = [Tensor(t, requires_grad=False) if not isinstance(t, Tensor) else t for t in [x, y]]
     return fxn(x, y)
+
+  @classmethod
+  def ones(cls, *shape): return cls(np.ones(shape, dtype=np.float32))
 
   def toposort(self):
     """
@@ -41,7 +54,7 @@ class Tensor:
     return _toposort(self, set(), [])
   
   def backward(self):
-    self.grad = Tensor(1, requires_grad=False)
+    self.grad = Tensor.ones(*self.shape)
     for t0 in reversed(self.toposort()):
       grads = t0._ctx.backward(t0.grad)
       grads = [grads] if not isinstance(grads, Tuple) else grads
@@ -68,7 +81,8 @@ class Tensor:
   def __mul__(self, x): return Tensor.ensure_tensor(Tensor._mul, self, x)
   def __rmul__(self, x): return Tensor.ensure_tensor(Tensor._mul, x, self)
   def __truediv__(self, x): return self * (x.inv() if isinstance(x, Tensor) else (1/x))
-  def __rtruediv__(self, x): return x * self.inv()
+
+  def __rtruediv__(self, x): return self.inv() * x
   #def __pow__(self, x): return Tensor.ensure_tensor(Tensor._pow, self, x)
   def eq(self, x): return Tensor._eq(self, x)
 
@@ -95,7 +109,7 @@ class Function:
     # Create an instance of the Function
     ctx = cls(*x) 
     # Every ops create a new Tensor
-    ret = Tensor(data=ctx.forward(*[v.data for v in x]), requires_grad=ctx.requires_grad)
+    ret = Tensor(item=ctx.forward(*[v.item for v in x]), requires_grad=ctx.requires_grad)
     ret._ctx = ctx
     return ret
   

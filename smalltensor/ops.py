@@ -1,5 +1,5 @@
-import math
 from smalltensor.tensor import Function
+import numpy as np
 
 # *********** Unary ops **********
 
@@ -22,16 +22,16 @@ class Inv(Function):
 class ReLU(Function):
   def forward(self, a):
     self.saved_for_backward(a)
-    return max(a, 0.0)
+    return np.maximum(a, 0.0)
 
   def backward(self, grad_output):
     a = self.saved_tensor[0]
-    return grad_output if a > 0 else 0.0
+    return grad_output * np.greater(a, 0)
 
 class Log(Function):
   def forward(self, a):
     self.saved_for_backward(a)
-    return math.log(a)
+    return np.log(a)
 
   def backward(self, grad_output):
     a = self.saved_tensor[0]
@@ -40,11 +40,11 @@ class Log(Function):
 class Exp(Function):
   def forward(self, a):
     self.saved_for_backward(a)
-    return math.exp(a)
+    return np.exp(a)
 
   def backward(self, grad_output):
     a = self.saved_tensor[0]
-    return grad_output * math.exp(a)
+    return grad_output * np.exp(a)
 
 # *********** Reduce ops **********
 
@@ -85,7 +85,7 @@ class Mul(Function):
 
   def backward(self, grad_output):
     a, b = self.saved_tensor
-    return b*grad_output, a*grad_output
+    return grad_output*b, grad_output*a
 
 #class Pow(Function):
 #  def forward(self, a, b):
@@ -94,7 +94,7 @@ class Mul(Function):
 #
 #  def backward(self, grad_output):
 #    a, b = self.saved_tensor
-#    return grad_output*b*(a**(b-1)), grad_output*(a**b)*math.log(abs(a))
+#    return grad_output*b*(a**(b-1)), grad_output*(a**b)*np.log(abs(a))
 
 class Eq(Function):
   def forward(self, a, b):
