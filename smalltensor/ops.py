@@ -49,18 +49,28 @@ class Exp(Function):
 # *********** Reduce ops **********
 
 class Sum(Function):
-  def forward(self, a):
-    raise NotImplementedError("will implement")
+  def forward(self, a, dim):
+    self.saved_for_backward(a.shape)
+    return np.sum(a, dim)
 
   def backward(self, grad_output):
-    raise NotImplementedError("will implement")
+    s = self.saved_tensor[0]
+    return np.ones(s)
 
 class Max(Function):
-  def forward(self, a):
-    raise NotImplementedError("will implement")
+  def forward(self, a, dim):
+    self.saved_for_backward(a, dim)
+    return np.amax(a, dim)
 
   def backward(self, grad_output):
-    raise NotImplementedError("will implement")
+    a, dim = self.saved_tensor
+    ret = np.zeros(a.shape)
+    argmax = a.argmax(axis=dim)
+    if dim is not None:
+      ret[np.arange(len(a)), argmax] = 1
+    else:
+      ret[np.unravel_index(argmax, a.shape)] = 1
+    return ret
 
 # *********** Binary ops **********
 
