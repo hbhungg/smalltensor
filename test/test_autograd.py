@@ -8,8 +8,6 @@ import torch
 from smalltensor.tensor import Tensor
 from smalltensor import set_printoptions
 
-set_printoptions(0)
-
 def test_diamond_backward():
   """
   Test multiple ops in backward pass.
