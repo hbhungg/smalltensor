@@ -1,6 +1,7 @@
 import os
 from typing import Optional, Tuple, Union, List
 import inspect, importlib, functools
+import math
 
 import numpy as np
 
@@ -63,7 +64,6 @@ class Tensor:
       for t, g in zip(t0._ctx.parents, grads):
         if t.requires_grad:
           t.grad = g if t.grad is None else (t.grad + g)
-    return self.grad
 
   @staticmethod
   def ensure_tensor(fxn, x, y):
@@ -100,8 +100,12 @@ class Tensor:
   def __rtruediv__(self, x): return Tensor.div(x, self)
 
   # Reduce ops
-  def sum(self, dim=None): return Tensor._sum(self, dim=dim)
-  def max(self, dim=None): return Tensor._max(self, dim=dim)
+  def sum(self, dim=None, keepdims=False): return Tensor._sum(self, dim=dim, keepdims=keepdims)
+  def max(self, dim=None, keepdims=False): return Tensor._max(self, dim=dim, keepdims=keepdims)
+  def min(self, dim=None, keepdims=False): return -Tensor._max(-self, dim=dim, keepdims=keepdims)
+  def mean(self, dim=None, keepdims=False): 
+    out = Tensor._sum(self, dim=dim, keepdims=keepdims)
+    return out * math.prod(out.shape)/math.prod(self.shape)
 
   # TODO:
   # Movement ops

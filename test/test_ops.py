@@ -80,18 +80,18 @@ def test_exp():
 def test_neg():
   util_test_ops(lambda x: -x, Tensor.__neg__)
 
-# TODO: Should we create a generic function for these tests?
+def util_test_reduce(pyfxn, stfxn):
+  shape = [random.randint(1, 5) for i in range(random.randint(1, 5))]
+  a = np.random.rand(*shape)
+  assert pyfxn(a) == approx(stfxn(Tensor(a)).item), f"fails with input {a}"
+  for i in range(len(shape)):
+    assert pyfxn(a, i) == approx(stfxn(Tensor(a), i).item), f"fails with input {a}"
+
 def test_sum():
-  shape = [random.randint(1, 5) for i in range(random.randint(1, 5))]
-  a = np.random.rand(*shape)
-  assert a.sum() == approx(Tensor(a).sum().item), f"fails with input {a}"
-  for i in range(len(shape)):
-    assert a.sum(i) == approx(Tensor(a).sum(i).item), f"fails with input {a}"
-
+  util_test_reduce(np.sum, Tensor.sum)
 def test_max():
-  shape = [random.randint(1, 5) for i in range(random.randint(1, 5))]
-  a = np.random.rand(*shape)
-  assert a.max() == approx(Tensor(a).max().item), f"fails with input {a}"
-  for i in range(len(shape)):
-    assert a.max(i) == approx(Tensor(a).max(i).item), f"fails with input {a}"
-
+  util_test_reduce(np.max, Tensor.max)
+def test_min():
+  util_test_reduce(np.min, Tensor.min)
+def test_mean():
+  util_test_reduce(np.mean, Tensor.mean)

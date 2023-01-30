@@ -49,18 +49,18 @@ class Exp(Function):
 # *********** Reduce ops **********
 
 class Sum(Function):
-  def forward(self, a, dim):
+  def forward(self, a, dim, keepdims):
     self.saved_for_backward(a.shape)
-    return np.sum(a, dim)
+    return np.sum(a, dim, keepdims=keepdims)
 
   def backward(self, grad_output):
     s = self.saved_tensor[0]
     return np.ones(s)
 
 class Max(Function):
-  def forward(self, a, dim):
+  def forward(self, a, dim, keepdims):
     self.saved_for_backward(a, dim)
-    return np.amax(a, dim)
+    return np.amax(a, dim, keepdims=keepdims)
 
   def backward(self, grad_output):
     a, dim = self.saved_tensor
