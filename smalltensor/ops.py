@@ -97,14 +97,15 @@ class Mul(Function):
     a, b = self.saved_tensor
     return grad_output*b, grad_output*a
 
-#class Pow(Function):
-#  def forward(self, a, b):
-#    self.saved_for_backward(a, b)
-#    return a**b
-#
-#  def backward(self, grad_output):
-#    a, b = self.saved_tensor
-#    return grad_output*b*(a**(b-1)), grad_output*(a**b)*np.log(abs(a))
+class Pow(Function):
+ def forward(self, a, b):
+   ret = np.power(a, b)
+   self.saved_for_backward(a, b, ret)
+   return ret
+
+ def backward(self, grad_output):
+   a, b, ret = self.saved_tensor
+   return b*ret/a, ret*np.log(a)
 
 class Eq(Function):
   def forward(self, a, b):
@@ -113,6 +114,26 @@ class Eq(Function):
   def backward(self, grad_output):
     return 0.0, 0.0
 
-# TODO: Do we need this 2 ?
 # *********** Movement ops **********
+
+class Reshape(Function):
+  def forward(self, a, shape):
+    self.in_shape = a.shape
+    return np.reshape(self, shape)
+
+  def backward(self, grad_output):
+    return grad_output.reshape(self.in_shape)
+
+class Expand(Function):
+  pass
+
+class Permute(Function):
+  pass
+
+class Slice(Function):
+  pass
+
+class Flip(Function):
+  pass
+
 # *********** Processing ops **********

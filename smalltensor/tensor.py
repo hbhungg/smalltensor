@@ -9,7 +9,7 @@ import numpy as np
 
 
 class Tensor:
-  def __init__(self, item: Union[List, int, float, np.ndarray], requires_grad=False):
+  def __init__(self, item, requires_grad: bool=False):
     self.item = np.array(item, dtype=np.float32) if not isinstance(item, np.ndarray) else item.astype(np.float32)
     self.grad: Optional[Tensor] = None
     self.requires_grad: bool = requires_grad
@@ -27,16 +27,7 @@ class Tensor:
   def detach(self): return Tensor(self.item, requires_grad=False)
 
   def __repr__(self):
-    if self.requires_grad and self._ctx is not None:
-      return f"Tensor({self.prettify()}, requires_grad={self.requires_grad}, ctx={self._ctx})"
-    elif self.requires_grad and self._ctx is None:
-      return f"Tensor({self.prettify()}, requires_grad={self.requires_grad})"
-    else:
-      return f"Tensor({self.prettify()})"
-
-  # HACK: Make numpy print with correct indent when printing Tensor. Is there a better way?
-  def prettify(self):
-    return str(self.item).replace("\n", "\n" + 7*' ')
+    return f"Tensor({np.array2string(self.item, prefix=7*' ')}" + (f", requires_grad={self.requires_grad})" if self.requires_grad is True else ")")
 
   @classmethod
   def ones(cls, *shape): return cls(np.ones(shape, dtype=np.float32))
@@ -53,16 +44,17 @@ class Tensor:
       return nodes
     return _toposort(self, set(), [])
   
-  def backward(self):
+  def backward(self) -> None:
     if self.requires_grad is False:
       raise RuntimeError("Tensor does not require grad and does not have ctx. Make sure all of the tensors have requires_grad=True")
     self.grad = Tensor.ones(*self.shape)
     for t0 in reversed(self.toposort()):
       grads = t0._ctx.backward(t0.grad.item)
-      grads = [grads] if not isinstance(grads, Tuple) else grads
+      grads = [grads] if not isinstance(grads, tuple) else grads
       grads = [Tensor(g, requires_grad=False) if not isinstance(g, Tensor) else g for g in grads]
       for t, g in zip(t0._ctx.parents, grads):
         if t.requires_grad:
+          assert t.shape == g.shape, f"grad shape does not match tensor shape, {g.shape} != {t.shape}"
           t.grad = g if t.grad is None else (t.grad + g)
 
   @staticmethod
@@ -87,13 +79,14 @@ class Tensor:
   def mul(self, x): return Tensor.ensure_tensor(Tensor._mul, self, x)
   def div(self, x): return self * (x.inv() if isinstance(x, Tensor) else (1/x))
   def eq(self, x): return Tensor._eq(self, x)
-  #def pow(self, x): return Tensor.ensure_tensor(Tensor._pow, self, x)
+  def pow(self, x): return Tensor.ensure_tensor(Tensor._pow, self, x)
 
   # NOTES: This all could be generate using setattr, but im keeping this for clarity.
   __add__ = add
   __sub__ = sub
   __mul__ = mul
   __truediv__ = div
+  __pow__ = pow
   def __radd__(self, x): return Tensor.add(x, self)
   def __rsub__(self, x): return Tensor.sub(x, self)
   def __rmul__(self, x): return Tensor.mul(x, self)
@@ -107,8 +100,11 @@ class Tensor:
     out = Tensor._sum(self, dim=dim, keepdims=keepdims)
     return out * math.prod(out.shape)/math.prod(self.shape)
 
-  # TODO:
   # Movement ops
+  def reshape(self, shape: Tuple[int, ...]): return Tensor._reshape(self, shape)
+  # def expand(self, shape: Tuple[int, ...]): pass
+
+  # TODO:
   # Processing ops
 
 
