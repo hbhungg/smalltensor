@@ -1,9 +1,9 @@
 import random
 import math
 from inspect import signature
+
 import pytest
 from pytest import approx
-
 import numpy as np
 
 from smalltensor.tensor import Tensor
@@ -18,6 +18,7 @@ def central_difference(f, *vals, arg=0, epsilon=1e-6):
   # f'(x) = delta_h_f(x)/h
   return (f(*_diff(vals, arg, epsilon/2)) - f(*_diff(vals, arg, -epsilon/2)))/epsilon
 
+# FIX: Should we test forward and backward seperately?
 def util_test_ops(py_fxn, smt_fxn, atol=1e-5, rtol=1e-5):
   nparams = len(signature(py_fxn).parameters)
   pyi = [np.random.rand(3, 3) for n in range(nparams)]
@@ -69,8 +70,8 @@ def test_inv_raise_zero():
 
 def test_inv():
   util_test_ops(lambda x: 1/x, Tensor.inv)
-#def test_pow():
-#  util_test_ops(lambda x,y: x**y, Tensor.__pow__)
+def test_pow():
+  util_test_ops(lambda x,y: x**y, Tensor.pow)
 def test_log():
   util_test_ops(lambda x: np.log(x), Tensor.log)
 def test_relu():
@@ -79,6 +80,7 @@ def test_exp():
   util_test_ops(lambda x: np.exp(x), Tensor.exp)
 def test_neg():
   util_test_ops(lambda x: -x, Tensor.__neg__)
+
 
 def util_test_reduce(pyfxn, stfxn):
   shape = [random.randint(1, 5) for i in range(random.randint(1, 5))]
