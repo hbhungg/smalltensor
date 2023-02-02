@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 from typing import Optional, Tuple, Union, List
 import inspect, importlib, functools
@@ -10,7 +11,7 @@ import numpy as np
 
 class Tensor:
   def __init__(self, item, requires_grad: bool=False):
-    self.item = np.array(item, dtype=np.float32) if not isinstance(item, np.ndarray) else item.astype(np.float32)
+    self.item: np.ndarray = np.array(item, dtype=np.float32) if not isinstance(item, np.ndarray) else item.astype(np.float32)
     self.grad: Optional[Tensor] = None
     self.requires_grad: bool = requires_grad
 
@@ -32,10 +33,9 @@ class Tensor:
   @classmethod
   def ones(cls, *shape): return cls(np.ones(shape, dtype=np.float32))
 
-  def toposort(self):
+  def toposort(self) -> List[Tensor]:
     """
-    Toposort for backward pass
-    """
+    Toposort the graph """
     def _toposort(node, visited, nodes):
       visited.add(node)
       if node._ctx is not None:
@@ -45,10 +45,14 @@ class Tensor:
     return _toposort(self, set(), [])
   
   def backward(self) -> None:
+    """
+    Compute the gradient of the current Tensor w.r.t graph leaves. The graph is differentiated using the chain rule. """
     if self.requires_grad is False:
       raise RuntimeError("Tensor does not require grad and does not have ctx. Make sure all of the tensors have requires_grad=True")
     self.grad = Tensor.ones(*self.shape)
     for t0 in reversed(self.toposort()):
+      assert t0._ctx is not None
+      assert t0.grad is not None
       grads = t0._ctx.backward(t0.grad.item)
       grads = [grads] if not isinstance(grads, tuple) else grads
       grads = [Tensor(g, requires_grad=False) if not isinstance(g, Tensor) else g for g in grads]
@@ -60,8 +64,7 @@ class Tensor:
   @staticmethod
   def ensure_tensor(fxn, x, y):
     """
-    Turn all Python number into Tensor
-    """
+    Turn all Python number into Tensor """
     x, y = [Tensor(t, requires_grad=False) if not isinstance(t, Tensor) else t for t in [x, y]]
     return fxn(x, y)
 
@@ -101,11 +104,13 @@ class Tensor:
     return out * math.prod(out.shape)/math.prod(self.shape)
 
   # Movement ops
-  def reshape(self, shape: Tuple[int, ...]): return Tensor._reshape(self, shape)
-  # def expand(self, shape: Tuple[int, ...]): pass
+  def reshape(self, *shape): return Tensor._reshape(self, shape=shape)
+  def expand(self, *size): return Tensor._expand(self, size=size) 
+  def permute(self, *order): return Tensor._permute(self, order=order)
 
   # TODO:
   # Processing ops
+  # conv2d?
 
 
 class Function:
@@ -114,19 +119,18 @@ class Function:
   All of the operations on the Tensor will be handle by Function.apply
   An instance of the Function act as the Context that work on Tensor.
   A Function remember the Tensors that it operate on, and create a new Tensor as result.
-  The resulting Tensor remember that Function, which creating the autodiff DAG graph.
-  """
+  The resulting Tensor remember that Function, which creating the autodiff DAG graph. """
   def __init__(self, *tensors: Tensor):
     self.parents = tensors
     self.saved_tensor: List[Tensor] = []
     self.needs_input_grad: List[bool] = [t.requires_grad for t in self.parents]
     self.requires_grad: bool = any(self.needs_input_grad)
 
-  def saved_for_backward(self, *x):
+  def saved_for_backward(self, *x) -> None:
     self.saved_tensor.extend(x)
 
   @classmethod
-  def apply(cls, *x: Tensor, **kwargs):
+  def apply(cls, *x: Tensor, **kwargs) -> Tensor:
     # Create an instance of the Function
     ctx = cls(*x) 
     # Every ops create a new Tensor
@@ -137,7 +141,7 @@ class Function:
   # In case any function derived have not implement these.
   def forward(self, *args, **kwargs): raise NotImplementedError(f"Not implemented for {type(self)}")
   def backward(self, *args, **kwargs): raise NotImplementedError(f"Not implemented for {type(self)}")
-  
+ 
   def __repr__(self):
     return f"<{self.__class__.__name__}Backward>"
 

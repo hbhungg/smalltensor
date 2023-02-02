@@ -119,21 +119,34 @@ class Eq(Function):
 class Reshape(Function):
   def forward(self, a, shape):
     self.in_shape = a.shape
-    return np.reshape(self, shape)
+    return np.reshape(a, *shape)
 
   def backward(self, grad_output):
-    return grad_output.reshape(self.in_shape)
+    return np.reshape(grad_output, *self.in_shape)
 
 class Expand(Function):
-  pass
+  def forward(self, a, size):
+    self.in_shape = a.shape
+    return np.expand_dims(a, axis=size)
+
+  def backward(self, grad_output):
+    return np.sum(grad_output, self.in_shape)
 
 class Permute(Function):
-  pass
+  def forward(self, a, order):
+    self.order = order
+    return np.transpose(a, order)
 
-class Slice(Function):
-  pass
+  def backward(self, grad_output):
+    return np.transpose(grad_output, np.argsort(self.order))
 
-class Flip(Function):
-  pass
+# NOTES: Not important?
+# class Slice(Function):
+#   pass
+#
+# class Flip(Function):
+#   pass
 
 # *********** Processing ops **********
+
+# TODO: Conv2d?
