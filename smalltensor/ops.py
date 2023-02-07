@@ -50,12 +50,11 @@ class Exp(Function):
 
 class Sum(Function):
   def forward(self, a, dim, keepdims):
-    self.saved_for_backward(a.shape)
+    self.in_shape = a.shape
     return np.sum(a, dim, keepdims=keepdims)
 
   def backward(self, grad_output):
-    s = self.saved_tensor[0]
-    return np.ones(s)
+    return np.broadcast_to(grad_output, self.in_shape)
 
 class Max(Function):
   def forward(self, a, dim, keepdims):
@@ -114,6 +113,16 @@ class Eq(Function):
   def backward(self, grad_output):
     return 0.0, 0.0
 
+class Matmul(Function):
+  def forward(self, a, b):
+    self.saved_for_backward(a, b)
+    return np.matmul(a, b)
+
+  def backward(self, grad_output):
+    a, b = self.saved_tensor
+    return np.matmul(grad_output, np.transpose(b)), \
+           np.matmul(np.transpose(a), grad_output)
+
 # *********** Movement ops **********
 
 class Reshape(Function):
@@ -125,9 +134,9 @@ class Reshape(Function):
     return np.reshape(grad_output, *self.in_shape)
 
 class Expand(Function):
-  def forward(self, a, size):
+  def forward(self, a, shape):
     self.in_shape = a.shape
-    return np.expand_dims(a, axis=size)
+    return np.broadcast_to(a, shape)
 
   def backward(self, grad_output):
     return np.sum(grad_output, self.in_shape)

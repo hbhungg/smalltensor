@@ -28,7 +28,7 @@ class Tensor:
   def detach(self): return Tensor(self.item, requires_grad=False)
 
   def __repr__(self):
-    return f"Tensor({np.array2string(self.item, prefix=7*' ')}" + (f", requires_grad={self.requires_grad})" if self.requires_grad is True else ")")
+    return f"Tensor({np.array2string(self.item, prefix=7*' ', precision=4, separator=', ')}" + (f", requires_grad={self.requires_grad})" if self.requires_grad is True else ")")
 
   @classmethod
   def ones(cls, *shape): return cls(np.ones(shape, dtype=np.float32))
@@ -44,6 +44,7 @@ class Tensor:
       return nodes
     return _toposort(self, set(), [])
   
+  # BUG: Backward return incorrect shape of grad on broadcasted Tensor.
   def backward(self) -> None:
     """
     Compute the gradient of the current Tensor w.r.t graph leaves. The graph is differentiated using the chain rule. """
@@ -61,6 +62,7 @@ class Tensor:
           assert t.shape == g.shape, f"grad shape does not match tensor shape, {g.shape} != {t.shape}"
           t.grad = g if t.grad is None else (t.grad + g)
 
+  # NOTES: we should perform broadcast ourself, to fix the backward bug above.
   @staticmethod
   def ensure_tensor(fxn, x, y):
     """
@@ -83,6 +85,7 @@ class Tensor:
   def div(self, x): return self * (x.inv() if isinstance(x, Tensor) else (1/x))
   def eq(self, x): return Tensor._eq(self, x)
   def pow(self, x): return Tensor.ensure_tensor(Tensor._pow, self, x)
+  def matmul(self, x): return Tensor.ensure_tensor(Tensor._matmul, self, x)
 
   # NOTES: This all could be generate using setattr, but im keeping this for clarity.
   __add__ = add
@@ -90,6 +93,7 @@ class Tensor:
   __mul__ = mul
   __truediv__ = div
   __pow__ = pow
+  __matmul__ = matmul
   def __radd__(self, x): return Tensor.add(x, self)
   def __rsub__(self, x): return Tensor.sub(x, self)
   def __rmul__(self, x): return Tensor.mul(x, self)
@@ -105,7 +109,7 @@ class Tensor:
 
   # Movement ops
   def reshape(self, *shape): return Tensor._reshape(self, shape=shape)
-  def expand(self, *size): return Tensor._expand(self, size=size) 
+  def expand(self, *shape): return Tensor._expand(self, shape=shape)
   def permute(self, *order): return Tensor._permute(self, order=order)
 
   # TODO:
