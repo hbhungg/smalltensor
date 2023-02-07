@@ -15,3 +15,14 @@ def create_autodiff_graph(node):
   nx.drawing.nx_pydot.write_dot(G, '/tmp/net.dot')
   os.system('dot -Tsvg /tmp/net.dot -o /tmp/net.svg')
   os.system('open /tmp/net.svg')
+
+from itertools import zip_longest
+def broadcast_shapes(*shapes):
+  ret = []
+  for dims in zip_longest(*[reversed(shape) for shape in shapes]):
+    v = set(dims) - {None, 1}
+    if len(v) < 2: 
+      ret.append(next(iter(v)))
+    else:
+      raise ValueError(f"Cannot broadcast, mismatch shape.")
+  return tuple(reversed(ret))
