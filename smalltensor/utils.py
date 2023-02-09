@@ -19,15 +19,28 @@ def create_autodiff_graph(node):
 from itertools import zip_longest
 from typing import Tuple
 
+# NOTES: Should these 2 function be combine? They share pretty much the same functionality
 def broadcast_shapes(s1: Tuple[int, ...], s2: Tuple[int, ...]):
   """
-  Find our the broadcasted shape between 2 shapes. 
+  Compute the broadcasted shape between 2 shapes. 
   broadcast_shapes((1, 2), (3, 2)) == (3, 2)
   broadcast_shapes((7,), (5, 1, 7)) == (5, 1, 7) """
   ret = []
   for idx, dims in enumerate(zip_longest(*[reversed(s) for s in [s1, s2]], fillvalue=1)):
-    v = set(dims)
-    if min(v) != 1 and len(v) == 2:
+    if min(dims) != 1 and (min(dims) != max(dims)):
       raise ValueError(f"Cannot broadcast shapes of {s1} with {s2} at idx:{idx} ({dims[0]} and {dims[1]})")
-    ret.append(max(v))
+    ret.append(max(dims))
+  return tuple(reversed(ret))
+
+def broadcast_indices(s1: Tuple[int, ...], s2: Tuple[int, ...]):
+  """
+  Compute the indices that are broadcasted. 
+  broadcast_indices((1, 2), (3, 2)) == (0,)
+  broadcast_indices((6, 7), (5, 6, 1)) == (0, 2) """
+  ret, mlen = [], max(len(s1), len(s2))
+  for idx, dims in enumerate(zip_longest(*[reversed(s) for s in [s1, s2]], fillvalue=1)):
+    if min(dims) != 1 and (min(dims) != max(dims)):
+      raise ValueError(f"Cannot broadcast shapes of {s1} with {s2} at idx:{idx} ({dims[0]} and {dims[1]})")
+    elif min(dims) == 1:
+      ret.append(mlen-idx-1)
   return tuple(reversed(ret))

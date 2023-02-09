@@ -7,6 +7,7 @@ import math
 import numpy as np
 
 #from .buffer import Buffer
+from .utils import broadcast_shapes
 
 
 class Tensor:
@@ -27,6 +28,15 @@ class Tensor:
   # Detach Tensor out of the autodiff graph
   def detach(self): return Tensor(self.item, requires_grad=False)
 
+  @classmethod
+  def randn(cls, *shape, **kwargs): return cls(np.random.default_rng().standard_normal(size=shape, dtype=np.float32), **kwargs)
+
+  @classmethod
+  def zeros(cls, *args, **kwargs): return cls(np.zeros(*shape, dtype=np.float32), **kwargs)
+
+  @classmethod
+  def ones(cls, *args, **kwargs): return cls(np.ones(*shape, dtype=np.float32), **kwargs)
+
   def __repr__(self):
     return f"Tensor({np.array2string(self.item, prefix=7*' ', precision=4, separator=', ')}" + (f", requires_grad={self.requires_grad})" if self.requires_grad is True else ")")
 
@@ -44,7 +54,6 @@ class Tensor:
       return nodes
     return _toposort(self, set(), [])
   
-  # BUG: Backward return incorrect shape of grad on broadcasted Tensor.
   def backward(self) -> None:
     """
     Compute the gradient of the current Tensor w.r.t graph leaves. The graph is differentiated using the chain rule. """
@@ -62,13 +71,18 @@ class Tensor:
           assert t.shape == g.shape, f"grad shape does not match tensor shape, {g.shape} != {t.shape}"
           t.grad = g if t.grad is None else (t.grad + g)
 
-  # NOTES: we should perform broadcast ourself, to fix the backward bug above.
   @staticmethod
-  def ensure_tensor(fxn, x, y):
+  def broadcasted_tensor(fxn, x, y):
     """
-    Turn all Python number into Tensor """
+    Turn all Python number into Tensor. 
+    Perform broadcasting using expand."""
     x, y = [Tensor(t, requires_grad=False) if not isinstance(t, Tensor) else t for t in [x, y]]
-    return fxn(x, y)
+    # No need to broadcast if similar shape
+    if x.shape == y.shape:
+      return fxn(x, y)
+    # Manually perform broadcast, in order to backward.
+    bshape = broadcast_shapes(x.shape, y.shape)
+    return fxn(x.expand(*bshape), y.expand(*bshape))
 
   # Unary ops
   # Should neg be a standalone function or using sub?
@@ -79,13 +93,13 @@ class Tensor:
   def exp(self): return Tensor._exp(self)
 
   # Binary ops
-  def add(self, x): return Tensor.ensure_tensor(Tensor._add, self, x)
-  def sub(self, x): return Tensor.ensure_tensor(Tensor._sub, self, x)
-  def mul(self, x): return Tensor.ensure_tensor(Tensor._mul, self, x)
+  def add(self, x): return Tensor.broadcasted_tensor(Tensor._add, self, x)
+  def sub(self, x): return Tensor.broadcasted_tensor(Tensor._sub, self, x)
+  def mul(self, x): return Tensor.broadcasted_tensor(Tensor._mul, self, x)
   def div(self, x): return self * (x.inv() if isinstance(x, Tensor) else (1/x))
   def eq(self, x): return Tensor._eq(self, x)
-  def pow(self, x): return Tensor.ensure_tensor(Tensor._pow, self, x)
-  def matmul(self, x): return Tensor.ensure_tensor(Tensor._matmul, self, x)
+  def pow(self, x): return Tensor.broadcasted_tensor(Tensor._pow, self, x)
+  def matmul(self, x): return Tensor._matmul(self, x)
 
   # NOTES: This all could be generate using setattr, but im keeping this for clarity.
   __add__ = add

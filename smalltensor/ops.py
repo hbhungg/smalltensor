@@ -1,5 +1,6 @@
-from smalltensor.tensor import Function
 import numpy as np
+from .tensor import Function
+from .utils import broadcast_indices
 
 # *********** Unary ops **********
 
@@ -139,7 +140,8 @@ class Expand(Function):
     return np.broadcast_to(a, shape)
 
   def backward(self, grad_output):
-    return np.sum(grad_output, self.in_shape)
+    axs = broadcast_indices(self.in_shape, grad_output.shape)
+    return np.sum(grad_output, axs, keepdims=True)
 
 class Permute(Function):
   def forward(self, a, order):
