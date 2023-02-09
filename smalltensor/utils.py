@@ -17,12 +17,17 @@ def create_autodiff_graph(node):
   os.system('open /tmp/net.svg')
 
 from itertools import zip_longest
-def broadcast_shapes(*shapes):
+from typing import Tuple
+
+def broadcast_shapes(s1: Tuple[int, ...], s2: Tuple[int, ...]):
+  """
+  Find our the broadcasted shape between 2 shapes. 
+  broadcast_shapes((1, 2), (3, 2)) == (3, 2)
+  broadcast_shapes((7,), (5, 1, 7)) == (5, 1, 7) """
   ret = []
-  for dims in zip_longest(*[reversed(shape) for shape in shapes]):
-    v = set(dims) - {None, 1}
-    if len(v) < 2: 
-      ret.append(next(iter(v)))
-    else:
-      raise ValueError(f"Cannot broadcast, mismatch shape.")
+  for idx, dims in enumerate(zip_longest(*[reversed(s) for s in [s1, s2]], fillvalue=1)):
+    v = set(dims)
+    if min(v) != 1 and len(v) == 2:
+      raise ValueError(f"Cannot broadcast shapes of {s1} with {s2} at idx:{idx} ({dims[0]} and {dims[1]})")
+    ret.append(max(v))
   return tuple(reversed(ret))
