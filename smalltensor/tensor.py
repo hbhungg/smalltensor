@@ -59,6 +59,8 @@ class Tensor:
     Compute the gradient of the current Tensor w.r.t graph leaves. The graph is differentiated using the chain rule. """
     if self.requires_grad is False:
       raise RuntimeError("Tensor does not require grad and does not have ctx. Make sure all of the tensors have requires_grad=True")
+    if self.shape != (1,) and self.shape != ():
+      raise RuntimeError(f"grad can be implicitly created only for scalar outputs, while Tensor is of shape {self.shape}")
     self.grad = Tensor.ones(*self.shape)
     for t0 in reversed(self.toposort()):
       assert t0._ctx is not None
