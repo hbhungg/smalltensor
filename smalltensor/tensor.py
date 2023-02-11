@@ -37,6 +37,8 @@ class Tensor:
   @classmethod
   def ones(cls, *args, **kwargs): return cls(np.ones(*shape, dtype=np.float32), **kwargs)
 
+  def numpy(self) -> np.ndarray: return np.array(self.item)
+
   def __repr__(self):
     return f"Tensor({np.array2string(self.item, prefix=7*' ', precision=4, separator=', ')}" + (f", requires_grad={self.requires_grad})" if self.requires_grad is True else ")")
 
@@ -59,6 +61,8 @@ class Tensor:
     Compute the gradient of the current Tensor w.r.t graph leaves. The graph is differentiated using the chain rule. """
     if self.requires_grad is False:
       raise RuntimeError("Tensor does not require grad and does not have ctx. Make sure all of the tensors have requires_grad=True")
+    if self.shape != (1,) and self.shape != ():
+      raise RuntimeError(f"grad can be implicitly created only for scalar outputs, while Tensor is of shape {self.shape}")
     self.grad = Tensor.ones(*self.shape)
     for t0 in reversed(self.toposort()):
       assert t0._ctx is not None
@@ -86,11 +90,12 @@ class Tensor:
 
   # Unary ops
   # Should neg be a standalone function or using sub?
-  def __neg__(self): return Tensor._neg(self)
+  def neg(self): return Tensor._neg(self)
   def inv(self): return Tensor._inv(self)
   def relu(self): return Tensor._relu(self)
   def log(self): return Tensor._log(self)
   def exp(self): return Tensor._exp(self)
+  def square(self): return self*self
 
   # Binary ops
   def add(self, x): return Tensor.broadcasted_tensor(Tensor._add, self, x)
@@ -99,19 +104,9 @@ class Tensor:
   def div(self, x): return self * (x.inv() if isinstance(x, Tensor) else (1/x))
   def eq(self, x): return Tensor._eq(self, x)
   def pow(self, x): return Tensor.broadcasted_tensor(Tensor._pow, self, x)
+  # NOTES: Numpy allow broadcasting on batch dim (not the last 2 dims)
+  # NOTES: However, we have not implement it for backward, should we?
   def matmul(self, x): return Tensor._matmul(self, x)
-
-  # NOTES: This all could be generate using setattr, but im keeping this for clarity.
-  __add__ = add
-  __sub__ = sub
-  __mul__ = mul
-  __truediv__ = div
-  __pow__ = pow
-  __matmul__ = matmul
-  def __radd__(self, x): return Tensor.add(x, self)
-  def __rsub__(self, x): return Tensor.sub(x, self)
-  def __rmul__(self, x): return Tensor.mul(x, self)
-  def __rtruediv__(self, x): return Tensor.div(x, self)
 
   # Reduce ops
   def sum(self, dim=None, keepdims=False): return Tensor._sum(self, dim=dim, keepdims=keepdims)
@@ -123,12 +118,28 @@ class Tensor:
 
   # Movement ops
   def reshape(self, *shape): return Tensor._reshape(self, shape=shape)
-  def expand(self, *shape): return Tensor._expand(self, shape=shape)
   def permute(self, *order): return Tensor._permute(self, order=order)
+  # NOTES: Should we mirror PyTorch where passing -1 means keeping that dim size the same?
+  # https://pytorch.org/docs/stable/generated/torch.Tensor.expand.html
+  def expand(self, *shape): return Tensor._expand(self, shape=shape)
 
   # TODO:
   # Processing ops
   # conv2d?
+
+  # NOTES: This all could be generate using setattr, but im keeping this for clarity.
+  __neg__ = neg
+  __add__ = add
+  __sub__ = sub
+  __mul__ = mul
+  __truediv__ = div
+  __pow__ = pow
+  __matmul__ = matmul
+  # NOTES: Are there any cool tricks to golf this?
+  def __radd__(self, x): return Tensor.add(x, self)
+  def __rsub__(self, x): return Tensor.sub(x, self)
+  def __rmul__(self, x): return Tensor.mul(x, self)
+  def __rtruediv__(self, x): return Tensor.div(x, self)
 
 
 class Function:

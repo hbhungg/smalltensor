@@ -70,7 +70,7 @@ class Max(Function):
       ret[np.arange(len(a)), argmax] = 1
     else:
       ret[np.unravel_index(argmax, a.shape)] = 1
-    return ret
+    return grad_output*ret
 
 # *********** Binary ops **********
 
@@ -105,7 +105,7 @@ class Pow(Function):
 
  def backward(self, grad_output):
    a, b, ret = self.saved_tensor
-   return b*ret/a, ret*np.log(a)
+   return grad_output*b*ret/a, grad_output*ret*np.log(a)
 
 class Eq(Function):
   def forward(self, a, b):
@@ -121,18 +121,21 @@ class Matmul(Function):
 
   def backward(self, grad_output):
     a, b = self.saved_tensor
-    return np.matmul(grad_output, np.transpose(b)), \
-           np.matmul(np.transpose(a), grad_output)
+    # https://pytorch.org/docs/stable/generated/torch.matmul.html
+    # N-D, N>2 ndarray are treated as stacks of 2-D matrices
+    # Transposing it means swapping the last 2 dims (-1 and -2)
+    return np.matmul(grad_output, np.swapaxes(b, -1, -2)), \
+           np.matmul(np.swapaxes(a, -1, -2), grad_output)
 
 # *********** Movement ops **********
 
 class Reshape(Function):
   def forward(self, a, shape):
     self.in_shape = a.shape
-    return np.reshape(a, *shape)
+    return np.reshape(a, shape)
 
   def backward(self, grad_output):
-    return np.reshape(grad_output, *self.in_shape)
+    return np.reshape(grad_output, self.in_shape)
 
 class Expand(Function):
   def forward(self, a, shape):
@@ -141,6 +144,8 @@ class Expand(Function):
 
   def backward(self, grad_output):
     axs = broadcast_indices(self.in_shape, grad_output.shape)
+    if len(self.in_shape) < len(grad_output.shape):
+      return np.sum(grad_output, axs)
     return np.sum(grad_output, axs, keepdims=True)
 
 class Permute(Function):

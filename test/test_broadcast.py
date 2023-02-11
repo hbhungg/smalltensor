@@ -21,13 +21,4 @@ def test_broadcast_indices_equal():
 def test_broadcast_indices_unequal():
   assert broadcast_indices((7,), (5, 1, 7)) == (0, 1)
   assert broadcast_indices((6, 7), (5, 6, 1)) == (0, 2)
-
-import numpy as np
-from smalltensor import Tensor
-def test_broadcast_backward():
-  a = Tensor.randn(1, 3, requires_grad=True)
-  b = Tensor.randn(3, 3, requires_grad=True)
-  c = a + b
-  c.backward()
-  assert a.grad.eq(Tensor.ones(1, 3) * 3)
-  assert b.grad.eq(Tensor.ones(3, 3))
+  assert broadcast_indices((1, 1), (1,)) == (0,)
