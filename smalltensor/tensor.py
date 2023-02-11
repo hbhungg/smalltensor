@@ -37,6 +37,8 @@ class Tensor:
   @classmethod
   def ones(cls, *args, **kwargs): return cls(np.ones(*shape, dtype=np.float32), **kwargs)
 
+  def numpy(self) -> np.ndarray: return np.array(self.item)
+
   def __repr__(self):
     return f"Tensor({np.array2string(self.item, prefix=7*' ', precision=4, separator=', ')}" + (f", requires_grad={self.requires_grad})" if self.requires_grad is True else ")")
 
@@ -93,6 +95,7 @@ class Tensor:
   def relu(self): return Tensor._relu(self)
   def log(self): return Tensor._log(self)
   def exp(self): return Tensor._exp(self)
+  def square(self): return self*self
 
   # Binary ops
   def add(self, x): return Tensor.broadcasted_tensor(Tensor._add, self, x)
