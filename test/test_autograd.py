@@ -2,11 +2,9 @@ import random
 
 import pytest
 from pytest import approx
-
 import torch
 
 from smalltensor.tensor import Tensor
-from smalltensor import set_printoptions
 
 def test_diamond_backward():
   """
