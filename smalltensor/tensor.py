@@ -90,7 +90,7 @@ class Tensor:
 
   # Unary ops
   # Should neg be a standalone function or using sub?
-  def __neg__(self): return Tensor._neg(self)
+  def neg(self): return Tensor._neg(self)
   def inv(self): return Tensor._inv(self)
   def relu(self): return Tensor._relu(self)
   def log(self): return Tensor._log(self)
@@ -104,19 +104,9 @@ class Tensor:
   def div(self, x): return self * (x.inv() if isinstance(x, Tensor) else (1/x))
   def eq(self, x): return Tensor._eq(self, x)
   def pow(self, x): return Tensor.broadcasted_tensor(Tensor._pow, self, x)
+  # NOTES: Numpy allow broadcasting on batch dim (not the last 2 dims)
+  # NOTES: However, we have not implement it for backward, should we?
   def matmul(self, x): return Tensor._matmul(self, x)
-
-  # NOTES: This all could be generate using setattr, but im keeping this for clarity.
-  __add__ = add
-  __sub__ = sub
-  __mul__ = mul
-  __truediv__ = div
-  __pow__ = pow
-  __matmul__ = matmul
-  def __radd__(self, x): return Tensor.add(x, self)
-  def __rsub__(self, x): return Tensor.sub(x, self)
-  def __rmul__(self, x): return Tensor.mul(x, self)
-  def __rtruediv__(self, x): return Tensor.div(x, self)
 
   # Reduce ops
   def sum(self, dim=None, keepdims=False): return Tensor._sum(self, dim=dim, keepdims=keepdims)
@@ -134,6 +124,20 @@ class Tensor:
   # TODO:
   # Processing ops
   # conv2d?
+
+  # NOTES: This all could be generate using setattr, but im keeping this for clarity.
+  __neg__ = neg
+  __add__ = add
+  __sub__ = sub
+  __mul__ = mul
+  __truediv__ = div
+  __pow__ = pow
+  __matmul__ = matmul
+  # NOTES: Are there any cool tricks to golf this?
+  def __radd__(self, x): return Tensor.add(x, self)
+  def __rsub__(self, x): return Tensor.sub(x, self)
+  def __rmul__(self, x): return Tensor.mul(x, self)
+  def __rtruediv__(self, x): return Tensor.div(x, self)
 
 
 class Function:
