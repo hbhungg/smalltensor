@@ -118,8 +118,10 @@ class Tensor:
 
   # Movement ops
   def reshape(self, *shape): return Tensor._reshape(self, shape=shape)
-  def expand(self, *shape): return Tensor._expand(self, shape=shape)
   def permute(self, *order): return Tensor._permute(self, order=order)
+  # NOTES: Should we mirror PyTorch where passing -1 means keeping that dim size the same?
+  # https://pytorch.org/docs/stable/generated/torch.Tensor.expand.html
+  def expand(self, *shape): return Tensor._expand(self, shape=shape)
 
   # TODO:
   # Processing ops

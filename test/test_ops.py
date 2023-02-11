@@ -48,6 +48,8 @@ def test_relu():
   util_test_ops([(10,10)], lambda x: torch.relu(x), lambda x: x.relu())
 def test_exp():
   util_test_ops([(10,10)], lambda x: torch.exp(x), lambda x: x.exp())
+def test_square():
+  util_test_ops([(10,10)], lambda x: torch.square(x), lambda x: x.square())
 
 # Binary ops
 def test_add():
@@ -91,9 +93,9 @@ def test_mean():
 # Movement ops
 def test_expand():
   util_test_ops([(1,2,3,4)], lambda x: x.expand(2,2,3,4), lambda x: x.expand(2,2,3,4))
-@pytest.mark.skip(reason="broken")
 def test_expand_new_dim():
   util_test_ops([(1,2,3,4)], lambda x: x.expand(1,1,2,3,4), lambda x: x.expand(1,1,2,3,4))
+  util_test_ops([(10,2,3,4)], lambda x: x.expand(1,1,10,2,3,4), lambda x: x.expand(1,1,10,2,3,4))
 def test_permute():
   util_test_ops([(1,2,3,4)], lambda x: x.permute(1,0,3,2), lambda x: x.permute(1,0,3,2))
 def test_reshape():

@@ -21,3 +21,4 @@ def test_broadcast_indices_equal():
 def test_broadcast_indices_unequal():
   assert broadcast_indices((7,), (5, 1, 7)) == (0, 1)
   assert broadcast_indices((6, 7), (5, 6, 1)) == (0, 2)
+  assert broadcast_indices((1, 1), (1,)) == (0,)

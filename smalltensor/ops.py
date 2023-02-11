@@ -144,6 +144,8 @@ class Expand(Function):
 
   def backward(self, grad_output):
     axs = broadcast_indices(self.in_shape, grad_output.shape)
+    if len(self.in_shape) < len(grad_output.shape):
+      return np.sum(grad_output, axs)
     return np.sum(grad_output, axs, keepdims=True)
 
 class Permute(Function):
