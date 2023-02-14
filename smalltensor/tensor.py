@@ -32,10 +32,10 @@ class Tensor:
   def randn(cls, *shape, **kwargs): return cls(np.random.default_rng().standard_normal(size=shape, dtype=np.float32), **kwargs)
 
   @classmethod
-  def zeros(cls, *args, **kwargs): return cls(np.zeros(*shape, dtype=np.float32), **kwargs)
+  def zeros(cls, *shape, **kwargs): return cls(np.zeros(*shape, dtype=np.float32), **kwargs)
 
   @classmethod
-  def ones(cls, *args, **kwargs): return cls(np.ones(*shape, dtype=np.float32), **kwargs)
+  def ones(cls, *shape, **kwargs): return cls(np.ones(*shape, dtype=np.float32), **kwargs)
 
   def numpy(self) -> np.ndarray: return np.array(self.item)
 
