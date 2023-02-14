@@ -4,4 +4,11 @@ Inspired by [minitorch](https://minitorch.github.io) and [tinygrad](https://gith
 
 As a learning project, its aims to be simple, readable and build from the ground up with few dependencies. 
 
-Core code is in `smalltensor/`.
+## Install
+Require Python version 3.8 or above.
+```bash
+git clone git@github.com:hbhungg/smalltensor.git
+cd smalltensor
+python3 -m pip install -e .
+```
+PyPi soon?
