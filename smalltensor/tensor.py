@@ -32,16 +32,13 @@ class Tensor:
   def randn(cls, *shape, **kwargs): return cls(np.random.default_rng().standard_normal(size=shape, dtype=np.float32), **kwargs)
 
   @classmethod
-  def zeros(cls, *shape, **kwargs): return cls(np.zeros(*shape, dtype=np.float32), **kwargs)
+  def zeros(cls, *shape, **kwargs): return cls(np.zeros(shape, dtype=np.float32), **kwargs)
 
   @classmethod
-  def ones(cls, *shape, **kwargs): return cls(np.ones(*shape, dtype=np.float32), **kwargs)
+  def ones(cls, *shape, **kwargs): return cls(np.ones(shape, dtype=np.float32), **kwargs)
 
   def detach(self) -> Tensor: return Tensor(self.item, requires_grad=False)
   def numpy(self) -> np.ndarray: return np.array(self.item)
-
-  @classmethod
-  def ones(cls, *shape): return cls(np.ones(shape, dtype=np.float32))
 
   def toposort(self) -> List[Tensor]:
     """

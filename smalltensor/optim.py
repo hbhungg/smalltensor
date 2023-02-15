@@ -7,7 +7,7 @@ class Optimizer:
     self.params: List[Tensor] = [t for t in params if t.requires_grad]
 
   def zero_grad(self):
-    for param in params:
+    for param in self.params:
       param.grad = None
 
   def clipnorm(self):
@@ -28,7 +28,8 @@ class SGD(Optimizer):
   # https://pytorch.org/docs/stable/generated/torch.optim.SGD.html
   def step(self) -> None:
     for idx, param in enumerate(self.params):
-      g = param.grad
+      assert param.grad is not None
+      g = param.grad.numpy()
       if self.weight_decay != 0:
         g = g + self.weight_decay * param.item
       if self.momentum != 0:
@@ -47,6 +48,7 @@ class Adam(Optimizer):
   # https://pytorch.org/docs/stable/generated/torch.optim.Adam.html
   def step(self) -> None:
     for idx, param in enumerate(self.params):
+      assert param.grad is not None
       g = param.grad.numpy()
       self.m[idx] = self.b1 + (1- self.b1)*g
       self.v[idx] = self.b2 + (1- self.b2)*g*g
