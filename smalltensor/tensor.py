@@ -19,14 +19,14 @@ class Tensor:
     # Context for autograph construction
     self._ctx: Optional[Function] = None
 
+  def __repr__(self):
+    return f"Tensor({np.array2string(self.item, prefix=7*' ', precision=4, separator=', ')}" + (f", requires_grad={self.requires_grad})" if self.requires_grad is True else ")")
+
   @property
   def shape(self): return self.item.shape
 
   @property
   def dtype(self): return np.float32
-
-  # Detach Tensor out of the autodiff graph
-  def detach(self): return Tensor(self.item, requires_grad=False)
 
   @classmethod
   def randn(cls, *shape, **kwargs): return cls(np.random.default_rng().standard_normal(size=shape, dtype=np.float32), **kwargs)
@@ -37,10 +37,8 @@ class Tensor:
   @classmethod
   def ones(cls, *shape, **kwargs): return cls(np.ones(*shape, dtype=np.float32), **kwargs)
 
+  def detach(self) -> Tensor: return Tensor(self.item, requires_grad=False)
   def numpy(self) -> np.ndarray: return np.array(self.item)
-
-  def __repr__(self):
-    return f"Tensor({np.array2string(self.item, prefix=7*' ', precision=4, separator=', ')}" + (f", requires_grad={self.requires_grad})" if self.requires_grad is True else ")")
 
   @classmethod
   def ones(cls, *shape): return cls(np.ones(shape, dtype=np.float32))
