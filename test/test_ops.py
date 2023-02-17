@@ -50,6 +50,8 @@ def test_exp():
   util_test_ops([(10,10)], lambda x: torch.exp(x), lambda x: x.exp())
 def test_square():
   util_test_ops([(10,10)], lambda x: torch.square(x), lambda x: x.square())
+def test_sigmoid():
+  util_test_ops([(10,10)], lambda x: torch.sigmoid(x), lambda x: x.sigmoid())
 
 # Binary ops
 def test_add():
@@ -78,6 +80,11 @@ def test_inv_raise_zero():
 
 @pytest.mark.skip(reason="not written")
 def test_broadcasted():
+  sops = [Tensor.add, Tensor.sub, Tensor.mul, Tensor.div, Tensor.pow]
+  tops = [torch.add, torch.sub, torch.mul, torch.div, torch.pow]
+  # for sfxn, tfxn in zip(sops, tops):
+  #   for shapes
+  #   util_test_ops(
   pass
 
 # Reduce ops

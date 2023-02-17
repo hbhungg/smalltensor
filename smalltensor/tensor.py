@@ -29,13 +29,29 @@ class Tensor:
   def dtype(self): return np.float32
 
   @classmethod
-  def randn(cls, *shape, **kwargs): return cls(np.random.default_rng().standard_normal(size=shape, dtype=np.float32), **kwargs)
+  def zeros(cls, *shape, **kwargs) -> Tensor: return cls(np.zeros(shape, dtype=np.float32), **kwargs)
 
   @classmethod
-  def zeros(cls, *shape, **kwargs): return cls(np.zeros(shape, dtype=np.float32), **kwargs)
+  def ones(cls, *shape, **kwargs) -> Tensor: return cls(np.ones(shape, dtype=np.float32), **kwargs)
 
   @classmethod
-  def ones(cls, *shape, **kwargs): return cls(np.ones(shape, dtype=np.float32), **kwargs)
+  def randn(cls, *shape, **kwargs) -> Tensor: 
+    """ Random number from normal distribution with mean 0 and var 1 """
+    return cls(np.random.default_rng().standard_normal(size=shape, dtype=np.float32), **kwargs)
+
+  @classmethod
+  def uniform(cls, *shape, **kwargs) -> Tensor: 
+    """ Random number from continuous uniform distribution"""
+    return cls((np.random.default_rng().random(size=shape, dtype=np.float32)*2-1), **kwargs)
+
+  @classmethod
+  def scale_uniform(cls, *shape, **kwargs) -> Tensor: 
+    return cls((np.random.default_rng().random(size=shape, dtype=np.float32)*2-1) * (math.sqrt(math.prod(shape))), **kwargs)
+
+  @classmethod
+  def xavier_uniform(cls, *shape, **kwargs) -> Tensor:
+    return cls((np.random.default_rng().random(size=shape, dtype=np.float32)*2-1) * (math.sqrt(6/(shape[0]+math.prod(shape[1:])))), **kwargs)
+
 
   def detach(self) -> Tensor: return Tensor(self.item, requires_grad=False)
   def numpy(self) -> np.ndarray: return np.array(self.item)
@@ -91,14 +107,15 @@ class Tensor:
   def log(self): return Tensor._log(self)
   def exp(self): return Tensor._exp(self)
   def square(self): return self*self
+  def sigmoid(self): return (self.neg().exp() + 1).inv()
 
   # Binary ops
   def add(self, x): return Tensor.broadcasted_tensor(Tensor._add, self, x)
   def sub(self, x): return Tensor.broadcasted_tensor(Tensor._sub, self, x)
   def mul(self, x): return Tensor.broadcasted_tensor(Tensor._mul, self, x)
   def div(self, x): return self * (x.inv() if isinstance(x, Tensor) else (1/x))
-  def eq(self, x): return Tensor._eq(self, x)
   def pow(self, x): return Tensor.broadcasted_tensor(Tensor._pow, self, x)
+  def eq(self, x): return Tensor._eq(self, x)
   # NOTES: Numpy allow broadcasting on batch dim (not the last 2 dims)
   # NOTES: However, we have not implement it for backward, should we?
   def matmul(self, x): return Tensor._matmul(self, x)

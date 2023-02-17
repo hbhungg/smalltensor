@@ -4,13 +4,15 @@ import numpy as np
 
 class Optimizer:
   def __init__(self, params: List[Tensor]):
+    for param in params:
+      param.requires_grad = True
     self.params: List[Tensor] = [t for t in params if t.requires_grad]
 
   def zero_grad(self):
     for param in self.params:
       param.grad = None
 
-  def clipnorm(self):
+  def clipnorm(self, g):
     pass
   
   def step(self) -> None:
