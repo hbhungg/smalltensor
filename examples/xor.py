@@ -19,12 +19,11 @@ class XorModel(nn.Module):
 
 if __name__ == "__main__":
   model = XorModel()
-  opt = optim.SGD([model.w1, model.b1, model.w2, model.b2], lr=0.3)
+  opt = optim.SGD(model.parameters(), lr=0.1)
 
   b4 = model.w1.detach().numpy()
   x_train = list(product([0, 1], [0, 1]))
   for epoch in range(1000):
-    print(epoch)
     al = 0.0
     random.shuffle(x_train)
     for x, y in x_train:
@@ -32,16 +31,17 @@ if __name__ == "__main__":
       # [class 0, class 1]
       true = Tensor([[x^y]])
       out = model(inp)
-
+  
       loss = (true - out).square().mean()
       al += loss.numpy()
-
+  
       loss.backward()
       opt.step()
       opt.zero_grad()
-
-      print(f"Loss: {loss.numpy():.3f}, True: {true.numpy()}, Pred: {out.numpy()}")
-    print(f"Avg loss: {al/4}")
-
-  # print(b4)
-  # print(model.w1)
+  
+      if epoch % 100 == 0:
+        print(f"Loss: {loss.numpy():.3f}, True: {true.numpy()}, Pred: {out.numpy()}")
+    if epoch % 100 == 0:
+      print(epoch)
+      print(f"Avg loss: {al/4}")
+  
