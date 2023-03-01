@@ -14,4 +14,4 @@ python3 -m pip install -e .
 PyPi soon?
 
 ## Examples
-Example usage and training can be found at [\examples]((https://github.com/hbhungg/smalltensor/tree/main/examples).
+Example usage and training can be found at [\examples](https://github.com/hbhungg/smalltensor/tree/main/examples).
