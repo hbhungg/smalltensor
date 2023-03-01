@@ -11,7 +11,14 @@ git clone git@github.com:hbhungg/smalltensor.git
 cd smalltensor
 python3 -m pip install -e .
 ```
-PyPi soon?
 
 ## Examples
 Example usage and training can be found at [\examples](https://github.com/hbhungg/smalltensor/tree/main/examples).
+
+## TODOs:
+ - Package as PyPi.
+ - Create our own backend (no longer depend on numpy)! Good exercise.
+ - Conv2d.
+ 
+
+Welcome PRs and Issues.
