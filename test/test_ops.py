@@ -78,14 +78,14 @@ def test_div_raise_zero():
 def test_inv_raise_zero():
   with pytest.raises((ZeroDivisionError, FloatingPointError)): Tensor(0).inv()
 
-@pytest.mark.skip(reason="not written")
-def test_broadcasted():
-  sops = [Tensor.add, Tensor.sub, Tensor.mul, Tensor.div, Tensor.pow]
-  tops = [torch.add, torch.sub, torch.mul, torch.div, torch.pow]
-  # for sfxn, tfxn in zip(sops, tops):
-  #   for shapes
-  #   util_test_ops(
-  pass
+sops = [Tensor.add, Tensor.sub, Tensor.mul, Tensor.div, Tensor.pow]
+tops = [torch.add, torch.sub, torch.mul, torch.div, torch.pow]
+@pytest.mark.parametrize("tfxn, sfxn", zip(tops, sops))
+def test_broadcasted(tfxn, sfxn):
+  shapes = [[(10, 10), (10, 1)], [(1, 10), (10, 1)]]
+  for s in shapes:
+    util_test_ops(s, tfxn, sfxn, a=0 if sfxn==Tensor.pow else -1.0)
+
 
 # Reduce ops
 def test_sum():

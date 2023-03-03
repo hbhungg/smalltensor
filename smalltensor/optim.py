@@ -19,7 +19,7 @@ class Optimizer:
     raise NotImplementedError(f"Not implemented for {type(self)}")
 
 class SGD(Optimizer):
-  def __init__(self, params: List[Tensor], lr:float, momentum:float=0, nesterov:bool=False,
+  def __init__(self, params: List[Tensor], lr: float, momentum: float=0, nesterov:bool=False,
                weight_decay:float=0, dampening:float=0):
     super().__init__(params)
     self.lr, self.momentum = lr, momentum 
