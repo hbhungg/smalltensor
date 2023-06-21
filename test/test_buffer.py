@@ -1,6 +1,5 @@
 import numpy as np
-from smalltensor.buffer import NumpyBuffer
-from smalltensor.buffer import UnaryOps
+from smalltensor.backend import NumpyBuffer, UnaryOps
 
 # Right now, most of this test feels redundant since we are testing numpy backend using numpy
 def test_unary_op():

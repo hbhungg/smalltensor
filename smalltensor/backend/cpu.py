@@ -1,48 +1,6 @@
 from __future__ import annotations
+from .buffer import Buffer, Op, UnaryOps, BinaryOps, ReduceOps, MovementOps
 import numpy as np
-from enum import Enum, auto
-from typing import Union
-
-class UnaryOps(Enum):
-  NEG = auto()
-  EXP = auto()
-  LOG = auto()
-
-class BinaryOps(Enum): 
-  ADD = auto()
-  SUB = auto()
-  MUL = auto()
-  DIV = auto()
-  POW = auto()
-  CMPEQ = auto()
-
-class ReduceOps(Enum):
-  SUM = auto()
-  MAX = auto() # max(a) = a[0]; max element
-
-class MovementOps(Enum): 
-  RESHAPE = auto()
-  PERMUTE = auto()
-  EXPAND = auto()
-  # PAD = auto()
-  # SHRINK = auto()
-  # STRIDE = auto()
-
-Op = Union[UnaryOps, BinaryOps, ReduceOps, MovementOps]
-
-class Buffer:
-  def unary_op(self, op: BinaryOps):
-    raise NotImplemented(f"Not implemented for {self}")
-
-  def binary_op(self, op: BinaryOps, val):
-    raise NotImplemented(f"Not implemented for {self}")
-
-  def reduce_op(self, op: ReduceOps, shape, keepdims):
-    raise NotImplemented(f"Not implemented for {self}")
-
-  def movement_op(self, op: MovementOps, shape):
-    raise NotImplemented(f"Not implemented for {self}")
-
 
 class NumpyBuffer(Buffer, np.ndarray):
   def unary_op(self, op: UnaryOps):
@@ -69,5 +27,3 @@ class NumpyBuffer(Buffer, np.ndarray):
       case MovementOps.RESHAPE: return np.reshape(self, arg)
       case MovementOps.PERMUTE: return np.transpose(self, arg)
       case MovementOps.EXPAND: return np.broadcast_to(self, arg)
-
-
