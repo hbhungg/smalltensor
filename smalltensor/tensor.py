@@ -1,14 +1,43 @@
 from __future__ import annotations
-import os
-from typing import Optional, Tuple, Union, List
-import inspect, importlib, functools
+from typing import Optional, List
 import math
-
+from .backend import Buffer
 import numpy as np
-
-#from .buffer import Buffer
 from .utils import broadcast_shapes
 
+class Function:
+  """
+  Base class for all of Tensor ops.
+  All of the operations on the Tensor will be handle by Function.apply
+  An instance of the Function act as the Context that work on Tensor.
+  A Function remember the Tensors that it operate on, and create a new Tensor as result.
+  The resulting Tensor remember that Function, which creating the autodiff DAG graph. """
+  def __init__(self, *tensors: Tensor):
+    self.parents = tensors
+    self.saved_tensor: List[Tensor] = []
+    self.needs_input_grad: List[bool] = [t.requires_grad for t in self.parents]
+    self.requires_grad: bool = any(self.needs_input_grad)
+
+  def saved_for_backward(self, *x) -> None:
+    self.saved_tensor.extend(x)
+
+  @classmethod
+  def apply(cls, *x: Tensor, **kwargs) -> Tensor:
+    # Create an instance of the Function
+    ctx = cls(*x) 
+    # Every ops create a new Tensor
+    ret = Tensor(item=ctx.forward(*[t.item for t in x], **kwargs), requires_grad=ctx.requires_grad)
+    ret._ctx = ctx if ctx.requires_grad else None
+    return ret
+
+  # In case any function derived have not implement these.
+  def forward(self, *args, **kwargs): raise NotImplementedError(f"Not implemented for {type(self)}")
+  def backward(self, *args, **kwargs): raise NotImplementedError(f"Not implemented for {type(self)}")
+ 
+  def __repr__(self):
+    return f"<{self.__class__.__name__}Backward>"
+
+from . import ops
 
 class Tensor:
   def __init__(self, item, requires_grad: bool=False):
@@ -101,39 +130,39 @@ class Tensor:
 
   # Unary ops
   # Should neg be a standalone function or using sub?
-  def neg(self): return Tensor._neg(self)
-  def inv(self): return Tensor._inv(self)
-  def relu(self): return Tensor._relu(self)
-  def log(self): return Tensor._log(self)
-  def exp(self): return Tensor._exp(self)
+  def neg(self): return ops.Neg.apply(self)
+  def inv(self): return ops.Inv.apply(self)
+  def relu(self): return ops.ReLU.apply(self)
+  def log(self): return ops.Log.apply(self)
+  def exp(self): return ops.Exp.apply(self)
   def square(self): return self*self
   def sigmoid(self): return (self.neg().exp() + 1).inv()
 
   # Binary ops
-  def add(self, x): return Tensor.broadcasted_tensor(Tensor._add, self, x)
-  def sub(self, x): return Tensor.broadcasted_tensor(Tensor._sub, self, x)
-  def mul(self, x): return Tensor.broadcasted_tensor(Tensor._mul, self, x)
+  def add(self, x): return Tensor.broadcasted_tensor(ops.Add.apply, self, x)
+  def sub(self, x): return Tensor.broadcasted_tensor(ops.Sub.apply, self, x)
+  def mul(self, x): return Tensor.broadcasted_tensor(ops.Mul.apply, self, x)
   def div(self, x): return self * (x.inv() if isinstance(x, Tensor) else (1/x))
-  def pow(self, x): return Tensor.broadcasted_tensor(Tensor._pow, self, x)
-  def eq(self, x): return Tensor._eq(self, x)
+  def pow(self, x): return Tensor.broadcasted_tensor(ops.Pow.apply, self, x)
+  def eq(self, x): return ops.Eq.apply(self, x)
   # NOTES: Numpy allow broadcasting on batch dim (not the last 2 dims)
   # NOTES: However, we have not implement it for backward, should we?
-  def matmul(self, x): return Tensor._matmul(self, x)
+  def matmul(self, x): return ops.Matmul.apply(self, x)
 
   # Reduce ops
-  def sum(self, dim=None, keepdims=False): return Tensor._sum(self, dim=dim, keepdims=keepdims)
-  def max(self, dim=None, keepdims=False): return Tensor._max(self, dim=dim, keepdims=keepdims)
-  def min(self, dim=None, keepdims=False): return -Tensor._max(-self, dim=dim, keepdims=keepdims)
+  def sum(self, dim=None, keepdims=False): return ops.Sum.apply(self, dim=dim, keepdims=keepdims)
+  def max(self, dim=None, keepdims=False): return ops.Max.apply(self, dim=dim, keepdims=keepdims)
+  def min(self, dim=None, keepdims=False): return -ops.Max.apply(-self, dim=dim, keepdims=keepdims)
   def mean(self, dim=None, keepdims=False): 
-    out = Tensor._sum(self, dim=dim, keepdims=keepdims)
+    out = ops.Sum.apply(self, dim=dim, keepdims=keepdims)
     return out * math.prod(out.shape)/math.prod(self.shape)
 
   # Movement ops
-  def reshape(self, *shape): return Tensor._reshape(self, shape=shape)
-  def permute(self, *order): return Tensor._permute(self, order=order)
+  def reshape(self, *shape): return ops.Reshape.apply(self, shape=shape)
+  def permute(self, *order): return ops.Permute.apply(self, order=order)
   # NOTES: Should we mirror PyTorch where passing -1 means keeping that dim size the same?
   # https://pytorch.org/docs/stable/generated/torch.Tensor.expand.html
-  def expand(self, *shape): return Tensor._expand(self, shape=shape)
+  def expand(self, *shape): return ops.Expand.apply(self, shape=shape)
 
   # TODO:
   # Processing ops
@@ -152,44 +181,3 @@ class Tensor:
   def __rsub__(self, x): return Tensor.sub(x, self)
   def __rmul__(self, x): return Tensor.mul(x, self)
   def __rtruediv__(self, x): return Tensor.div(x, self)
-
-
-class Function:
-  """
-  Base class for all of Tensor ops.
-  All of the operations on the Tensor will be handle by Function.apply
-  An instance of the Function act as the Context that work on Tensor.
-  A Function remember the Tensors that it operate on, and create a new Tensor as result.
-  The resulting Tensor remember that Function, which creating the autodiff DAG graph. """
-  def __init__(self, *tensors: Tensor):
-    self.parents = tensors
-    self.saved_tensor: List[Tensor] = []
-    self.needs_input_grad: List[bool] = [t.requires_grad for t in self.parents]
-    self.requires_grad: bool = any(self.needs_input_grad)
-
-  def saved_for_backward(self, *x) -> None:
-    self.saved_tensor.extend(x)
-
-  @classmethod
-  def apply(cls, *x: Tensor, **kwargs) -> Tensor:
-    # Create an instance of the Function
-    ctx = cls(*x) 
-    # Every ops create a new Tensor
-    ret = Tensor(item=ctx.forward(*[t.item for t in x], **kwargs), requires_grad=ctx.requires_grad)
-    ret._ctx = ctx if ctx.requires_grad else None
-    return ret
-
-  # In case any function derived have not implement these.
-  def forward(self, *args, **kwargs): raise NotImplementedError(f"Not implemented for {type(self)}")
-  def backward(self, *args, **kwargs): raise NotImplementedError(f"Not implemented for {type(self)}")
- 
-  def __repr__(self):
-    return f"<{self.__class__.__name__}Backward>"
-
-
-# HACK: Since smalltensor/ops.py import this file, we could not import the ops due to circular.
-# HACK: We instead use importlib to late import ops.py after tensor.py.
-for name, cls in inspect.getmembers(importlib.import_module('smalltensor.ops'), inspect.isclass):
-  if name != "Function": 
-    setattr(Tensor, f"_{name.lower()}", functools.partialmethod(cls.apply))
-
