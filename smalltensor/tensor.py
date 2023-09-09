@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Optional, List
 import math
-from .backend import Buffer
+from .backend import Buffer, NumpyBuffer
 import numpy as np
 from .utils import broadcast_shapes
 
@@ -42,6 +42,7 @@ from . import ops
 class Tensor:
   def __init__(self, item, requires_grad: bool=False):
     self.item: np.ndarray = np.array(item, dtype=np.float32) if not isinstance(item, np.ndarray) else item.astype(np.float32)
+    # self.item: Buffer = NumpyBuffer(item, dtype=np.float32)
     self.grad: Optional[Tensor] = None
     self.requires_grad: bool = requires_grad
 

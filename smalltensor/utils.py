@@ -1,6 +1,7 @@
 import os
 import networkx as nx
 
+# BUG: This func is broken
 def create_autodiff_graph(node):
   def walk(node, G):
     if node._ctx is not None:
